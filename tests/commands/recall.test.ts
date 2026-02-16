@@ -213,4 +213,46 @@ describe("recallCommand", () => {
     expect(output).toContain("Write tests");
     expect(output).not.toContain("Fix crash");
   });
+
+  test("--tag on specific date with no matching tag shows message", () => {
+    const target = "2025-06-15";
+    writeFileSync(
+      join(memoryDir(tmp), `${target}.md`),
+      `# ${target}\n\n- 09:00 [bug] Some bug\n`,
+      "utf-8",
+    );
+
+    const { stdout } = captureOutput(() => recallCommand(target, { tag: "convention" }));
+    expect(stdout.join(" ")).toContain("No entries with tag: convention");
+  });
+
+  test("--limit with invalid value outputs all content", () => {
+    const today = formatDate(new Date());
+    writeFileSync(
+      join(memoryDir(tmp), `${today}.md`),
+      `# ${today}\n\n- 10:00 Entry one\n- 11:00 Entry two\n`,
+      "utf-8",
+    );
+
+    const { stdout } = captureOutput(() => recallCommand(undefined, { limit: "abc" }));
+    const output = stdout.join("\n");
+    expect(output).toContain("Entry one");
+    expect(output).toContain("Entry two");
+    expect(output).not.toContain("more lines");
+  });
+
+  test("--limit larger than content outputs all without truncation", () => {
+    const today = formatDate(new Date());
+    writeFileSync(
+      join(memoryDir(tmp), `${today}.md`),
+      `# ${today}\n\n- 10:00 Entry one\n- 11:00 Entry two\n`,
+      "utf-8",
+    );
+
+    const { stdout } = captureOutput(() => recallCommand(undefined, { limit: "999" }));
+    const output = stdout.join("\n");
+    expect(output).toContain("Entry one");
+    expect(output).toContain("Entry two");
+    expect(output).not.toContain("more lines");
+  });
 });

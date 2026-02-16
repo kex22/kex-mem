@@ -141,4 +141,15 @@ describe("todoCommand", () => {
     const { stdout } = await captureOutputAsync(() => todoCommand({ resolve: "Already done" }));
     expect(stdout.join(" ")).toContain("No matching open TODO.");
   });
+
+  test("all TODOs done without --all shows no open message", async () => {
+    writeFileSync(
+      join(memoryDir(tmp), "2026-02-15.md"),
+      "# 2026-02-15\n\n- 14:30 [todo] Task A [done]\n- 15:00 [todo] Task B [done]\n",
+      "utf-8",
+    );
+
+    const { stdout } = await captureOutputAsync(() => todoCommand());
+    expect(stdout.join(" ")).toContain("No open TODOs.");
+  });
 });

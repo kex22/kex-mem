@@ -141,4 +141,31 @@ describe("briefCommand", () => {
     expect(todoSection).toContain("Open task");
     expect(todoSection).not.toContain("Done task");
   });
+
+  test("no data at all shows empty message", () => {
+    rmSync(join(memoryDir(tmp), "MEMORY.md"));
+    rmSync(join(memoryDir(tmp), "USER.md"));
+    const { stdout } = captureOutput(() => briefCommand());
+    expect(stdout.join(" ")).toContain("No memory data found.");
+  });
+
+  test("TODOs from older files beyond --days window are included", () => {
+    // Recent file (within --days 1)
+    writeFileSync(
+      join(memoryDir(tmp), "2026-02-15.md"),
+      "# 2026-02-15\n\n- 14:30 [decision] Recent decision\n",
+      "utf-8",
+    );
+    // Older file (beyond --days 1) with a TODO
+    writeFileSync(
+      join(memoryDir(tmp), "2026-02-10.md"),
+      "# 2026-02-10\n\n- 09:00 [todo] Old TODO from past\n",
+      "utf-8",
+    );
+
+    const { stdout } = captureOutput(() => briefCommand({ days: "1" }));
+    const output = stdout.join("\n");
+    expect(output).toContain("=== TODO (1 open) ===");
+    expect(output).toContain("Old TODO from past");
+  });
 });

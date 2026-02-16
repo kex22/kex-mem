@@ -184,4 +184,17 @@ describe("indexCommand", () => {
     expect(output).toContain("Indexed 0 files");
     expect(output).toContain("skipped");
   });
+
+  test("incremental skips file that became empty", async () => {
+    const filePath = join(memoryDir(tmp), "willclear.md");
+    writeFileSync(filePath, "# Has content\n\nreal content\n", "utf-8");
+    await captureOutputAsync(() => indexCommand());
+
+    // Overwrite with empty content (mtime updates, so it won't be skipped by mtime check)
+    writeFileSync(filePath, "", "utf-8");
+    const { stdout } = await captureOutputAsync(() => indexCommand());
+    const output = stdout.join(" ");
+    // The empty file is read but skipped (not re-indexed), old entry remains
+    expect(output).toContain("skipped");
+  });
 });
