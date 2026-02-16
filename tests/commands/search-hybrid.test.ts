@@ -5,7 +5,7 @@ import { makeTempProject, cleanTempProject, captureOutput, captureOutputAsync } 
 import { initCommand } from "../../src/commands/init.js";
 import { logCommand } from "../../src/commands/log.js";
 import { searchCommand } from "../../src/commands/search.js";
-import { reindexCommand } from "../../src/commands/reindex.js";
+import { indexCommand } from "../../src/commands/index.js";
 import { memoryDir } from "../../src/lib/paths.js";
 
 describe("search-hybrid", () => {
@@ -38,7 +38,7 @@ describe("search-hybrid", () => {
 
   test("search works after reindex", async () => {
     writeFileSync(join(memoryDir(tmp), "2025-06-01.md"), "# June\n\n- chose Rust for performance\n", "utf-8");
-    await captureOutputAsync(() => reindexCommand());
+    await captureOutputAsync(() => indexCommand());
 
     const { stdout } = await captureOutputAsync(() => searchCommand("Rust", {}));
     expect(stdout.join(" ")).toContain("Rust");

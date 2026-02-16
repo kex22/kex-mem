@@ -38,8 +38,8 @@ describe("searchCommand", () => {
       await captureOutputAsync(() => logCommand(`searchable item number ${i}`, {}));
     }
     // Force different mtime by reindexing
-    const { reindexCommand } = require("../../src/commands/reindex.js");
-    await captureOutputAsync(() => reindexCommand());
+    const { indexCommand } = require("../../src/commands/index.js");
+    await captureOutputAsync(() => indexCommand());
 
     const { stdout } = await captureOutputAsync(() => searchCommand("searchable", { limit: "2" }));
     // Should have at most 2 result lines (one file since all entries are in same daily log)
@@ -65,8 +65,8 @@ describe("searchCommand", () => {
     writeFileSync(yPath, "# Yesterday\n\n- 10:00 unique_beta\n", "utf-8");
 
     // Reindex to pick up the manual file
-    const { reindexCommand } = require("../../src/commands/reindex.js");
-    await captureOutputAsync(() => reindexCommand());
+    const { indexCommand } = require("../../src/commands/index.js");
+    await captureOutputAsync(() => indexCommand());
 
     const { stdout: r1 } = await captureOutputAsync(() => searchCommand("unique_alpha", {}));
     expect(r1.join(" ")).toContain("unique_alpha");

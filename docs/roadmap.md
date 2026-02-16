@@ -36,15 +36,18 @@ FTS5 全文搜索，跑通三层记忆的基本流程。
 - @huggingface/transformers（本地 ONNX embedding）
 - sqlite-vec 扩展
 
-## v0.3 — 自动化增强
+## v0.3 — 自动化增强 ✓
 
 减少手动操作，让记忆管理更自动。
 
 新增：
-- PostToolUse hook 自动捕获 Claude 文件操作
-- `kex-mem compact --smart`：调用 LLM 自动提炼旧日志到 MEMORY.md
-- memory/USER.md 支持（用户偏好）
-- 增量索引优化（watch 模式可选）
+- 增量索引：`kex-mem index` 默认 mtime 比对，跳过未变更文件
+- 单文件索引：`kex-mem index <file>` 供 PostToolUse hook 调用
+- 全量重建：`kex-mem index --full`
+- `kex-mem init --hooks` 自动写入 plugin.json + post-tool.sh
+- PostToolUse hook 自动捕获 Claude 文件操作（单文件索引，毫秒级）
+- memory/USER.md 支持（用户偏好），`kex-mem recall --user`
+- `kex-mem compact --smart`：输出结构化 prompt 供 LLM 提炼旧日志到 MEMORY.md（不调用 API）
 
 ## 未来考虑
 

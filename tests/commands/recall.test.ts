@@ -106,4 +106,23 @@ describe("recallCommand", () => {
     const { stdout } = captureOutput(() => recallCommand("not-a-date"));
     expect(stdout.join(" ")).toContain("No log for not-a-date");
   });
+
+  test("--user shows USER.md content", () => {
+    const { stdout } = captureOutput(() => recallCommand(undefined, { user: true }));
+    const output = stdout.join("\n");
+    expect(output).toContain("User Preferences");
+  });
+
+  test("--user shows message when no USER.md", () => {
+    const { rmSync } = require("node:fs");
+    rmSync(join(tmp, "memory", "USER.md"));
+    const { stdout } = captureOutput(() => recallCommand(undefined, { user: true }));
+    expect(stdout.join(" ")).toContain("No user preferences found");
+  });
+
+  test("--user shows custom USER.md content", () => {
+    writeFileSync(join(memoryDir(tmp), "USER.md"), "# User Preferences\n\n## Coding Style\n\nPrefer functional style\n", "utf-8");
+    const { stdout } = captureOutput(() => recallCommand(undefined, { user: true }));
+    expect(stdout.join("\n")).toContain("Prefer functional style");
+  });
 });

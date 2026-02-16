@@ -1,7 +1,7 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { findProjectRoot, memoryDir, dbPath, durableMemoryPath, claudeMdPath } from "../lib/paths.js";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from "node:fs";
+import { findProjectRoot, memoryDir, dbPath, durableMemoryPath, userMemoryPath, claudeMdPath } from "../lib/paths.js";
 import { openDb } from "../lib/db.js";
-import { CLAUDE_MD_INJECTION, CLAUDE_MD_MARKER_START, CLAUDE_MD_MARKER_END, MEMORY_MD_TEMPLATE } from "../lib/config.js";
+import { CLAUDE_MD_INJECTION, CLAUDE_MD_MARKER_START, CLAUDE_MD_MARKER_END, MEMORY_MD_TEMPLATE, USER_MD_TEMPLATE, PLUGIN_JSON_TEMPLATE, POST_TOOL_HOOK_TEMPLATE } from "../lib/config.js";
 import { loadConfig, saveConfig } from "../lib/config-store.js";
 
 export function initCommand(opts: { hooks?: boolean }): void {
@@ -19,6 +19,13 @@ export function initCommand(opts: { hooks?: boolean }): void {
   if (!existsSync(durablePath)) {
     writeFileSync(durablePath, MEMORY_MD_TEMPLATE, "utf-8");
     console.log(`Created ${durablePath}`);
+  }
+
+  // Create USER.md
+  const userPath = userMemoryPath(root);
+  if (!existsSync(userPath)) {
+    writeFileSync(userPath, USER_MD_TEMPLATE, "utf-8");
+    console.log(`Created ${userPath}`);
   }
 
   // Initialize SQLite DB + detect sqlite-vec
@@ -72,7 +79,17 @@ export function initCommand(opts: { hooks?: boolean }): void {
     if (!existsSync(pluginDir)) {
       mkdirSync(pluginDir, { recursive: true });
     }
-    console.log("Hooks: use .claude-plugin/plugin.json for PostToolUse integration");
+    writeFileSync(`${pluginDir}/plugin.json`, PLUGIN_JSON_TEMPLATE, "utf-8");
+    console.log(`Created ${pluginDir}/plugin.json`);
+
+    const hooksDir = `${root}/hooks`;
+    if (!existsSync(hooksDir)) {
+      mkdirSync(hooksDir, { recursive: true });
+    }
+    const hookPath = `${hooksDir}/post-tool.sh`;
+    writeFileSync(hookPath, POST_TOOL_HOOK_TEMPLATE, "utf-8");
+    chmodSync(hookPath, 0o755);
+    console.log(`Created ${hookPath}`);
   }
 
   console.log("kex-mem initialized.");

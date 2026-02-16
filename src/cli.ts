@@ -5,7 +5,7 @@ const program = new Command();
 program
   .name("kex-mem")
   .description("Local long-term memory for AI coding assistants")
-  .version("0.2.0");
+  .version("0.3.0");
 
 program
   .command("init")
@@ -41,6 +41,7 @@ program
   .description("View recent memory logs")
   .argument("[date]", "Specific date (YYYY-MM-DD)")
   .option("-d, --durable", "Show durable memory (MEMORY.md)")
+  .option("-u, --user", "Show user preferences (USER.md)")
   .option("-w, --week", "Show past 7 days")
   .action(async (date, opts) => {
     const { recallCommand } = await import("./commands/recall.js");
@@ -51,6 +52,7 @@ program
   .command("compact")
   .description("Archive old daily logs")
   .option("-a, --auto", "Auto-archive by month")
+  .option("-s, --smart", "Output structured prompt for LLM-driven compaction")
   .option("--days <n>", "Archive logs older than N days", "30")
   .action(async (opts) => {
     const { compactCommand } = await import("./commands/compact.js");
@@ -59,10 +61,12 @@ program
 
 program
   .command("index")
-  .description("Rebuild FTS5 index from markdown files")
-  .action(async () => {
-    const { reindexCommand } = await import("./commands/reindex.js");
-    await reindexCommand();
+  .description("Index markdown files (incremental by default)")
+  .argument("[filepath]", "Single file to index (relative to memory/)")
+  .option("-f, --full", "Full rebuild (clear and re-index all)")
+  .action(async (filepath, opts) => {
+    const { indexCommand } = await import("./commands/index.js");
+    await indexCommand(filepath, opts);
   });
 
 program

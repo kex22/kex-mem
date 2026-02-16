@@ -120,4 +120,48 @@ describe("compactCommand", () => {
     const recentName = `${formatDate(yesterday)}.md`;
     expect(existsSync(join(memoryDir(tmp), recentName))).toBe(true);
   });
+
+  test("--smart outputs structured prompt with MEMORY.md", () => {
+    createOldLog(40, "# Old\n\n- important decision\n");
+    const { stdout } = captureOutput(() => compactCommand({ smart: true }));
+    const output = stdout.join("\n");
+    expect(output).toContain("## kex-mem compact --smart");
+    expect(output).toContain("### Instructions");
+    expect(output).toContain("### Current MEMORY.md");
+    expect(output).toContain("Durable Memory");
+    expect(output).toContain("### Daily Logs to Process");
+    expect(output).toContain("important decision");
+    expect(output).toContain("### Files to Delete After Processing");
+  });
+
+  test("--smart includes all old log files", () => {
+    const name1 = createOldLog(40, "# Day1\n\n- entry1\n");
+    const name2 = createOldLog(50, "# Day2\n\n- entry2\n");
+    const { stdout } = captureOutput(() => compactCommand({ smart: true }));
+    const output = stdout.join("\n");
+    expect(output).toContain(name1);
+    expect(output).toContain(name2);
+    expect(output).toContain("entry1");
+    expect(output).toContain("entry2");
+    expect(output).toContain(`memory/${name1}`);
+    expect(output).toContain(`memory/${name2}`);
+  });
+
+  test("--smart respects --days option", () => {
+    createOldLog(10, "# Ten days\n\n- entry\n");
+    const { stdout: s1 } = captureOutput(() => compactCommand({ smart: true, days: "30" }));
+    expect(s1.join(" ")).toContain("No logs older than 30 days");
+
+    const { stdout: s2 } = captureOutput(() => compactCommand({ smart: true, days: "5" }));
+    expect(s2.join("\n")).toContain("## kex-mem compact --smart");
+  });
+
+  test("--smart does not modify any files", () => {
+    const name = createOldLog(40, "# Old\n\n- entry\n");
+    captureOutput(() => compactCommand({ smart: true }));
+    // Original file should still exist
+    expect(existsSync(join(memoryDir(tmp), name))).toBe(true);
+    // No archive directory should be created
+    expect(existsSync(join(memoryDir(tmp), "archive"))).toBe(false);
+  });
 });

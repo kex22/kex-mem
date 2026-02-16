@@ -6,12 +6,16 @@ Local long-term memory tool. Use these commands via Bash:
 
 - `kex-mem recall` — recent logs (today + yesterday)
 - `kex-mem recall --durable` — durable memory (MEMORY.md)
+- `kex-mem recall --user` — user preferences (USER.md)
 - `kex-mem recall --week` — past 7 days
 - `kex-mem recall 2025-01-15` — specific date
 - `kex-mem log "message" --tag decision` — record a memory
 - `kex-mem search "query"` — full-text search
-- `kex-mem index` — rebuild search index
+- `kex-mem index` — incremental index (mtime-based)
+- `kex-mem index <file>` — index single file
+- `kex-mem index --full` — full rebuild
 - `kex-mem compact --auto` — archive old logs by month
+- `kex-mem compact --smart` — output structured prompt for LLM compaction
 
 ## Tags
 

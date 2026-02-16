@@ -7,6 +7,7 @@
 | 层 | 存储 | 用途 |
 |---|---|---|
 | Durable | `memory/MEMORY.md` | 长期决策、约定、架构 |
+| User | `memory/USER.md` | 用户偏好和习惯 |
 | Ephemeral | `memory/YYYY-MM-DD.md` | 每日工作日志 |
 | Deep Search | `memory/.kex-mem.db` | SQLite FTS5 + sqlite-vec 混合搜索 |
 
@@ -33,17 +34,20 @@ kex-mem log "修复了路径解析的 bug" --tag bug
 kex-mem recall            # 今天 + 昨天
 kex-mem recall --week     # 最近 7 天
 kex-mem recall --durable  # 长期记忆
+kex-mem recall --user     # 用户偏好
 
 # 全文搜索
 kex-mem search "Bun"
 kex-mem search "路径" --limit 20
 
-# 重建索引
-kex-mem index
+# 索引
+kex-mem index             # 增量索引（默认）
+kex-mem index --full      # 全量重建
 
 # 归档旧日志
 kex-mem compact           # 预览
 kex-mem compact --auto    # 按月归档
+kex-mem compact --smart   # 输出结构化 prompt 供 LLM 提炼
 ```
 
 ## 标签
@@ -61,14 +65,16 @@ kex-mem compact --auto    # 按月归档
 
 同时提供 `.claude-plugin/plugin.json`，支持：
 - `/kex-mem` 斜杠命令
-- `PostToolUse` hook（Write/Edit 后自动重建索引）
+- `PostToolUse` hook（Write/Edit 后自动单文件索引）
+
+运行 `kex-mem init --hooks` 自动安装 plugin.json 和 hook 脚本。
 
 ## 项目结构
 
 ```
 src/
   cli.ts                 # Commander 入口
-  commands/              # init, log, search, recall, compact, reindex, config
+  commands/              # init, log, search, recall, compact, index, config
   lib/
     paths.ts             # 路径解析
     db.ts                # SQLite FTS5 + sqlite-vec
@@ -91,7 +97,7 @@ bun test
 
 - **v0.1** — FTS5 全文搜索，6 个核心命令 ✅
 - **v0.2** — sqlite-vec 混合搜索 + `kex-mem config` ✅
-- **v0.3** — `compact --smart`（LLM 自动提炼）
+- **v0.3** — 增量索引 + PostToolUse hook + USER.md + `compact --smart` ✅
 
 ## License
 

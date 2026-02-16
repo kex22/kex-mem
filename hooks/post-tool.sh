@@ -5,9 +5,9 @@
 TOOL_NAME="$1"
 FILE_PATH="$2"
 
-# Only act on memory directory files
 case "$FILE_PATH" in
   */memory/*.md)
-    kex-mem index 2>/dev/null
+    REL_PATH="${FILE_PATH##*/memory/}"
+    kex-mem index "$REL_PATH" 2>/dev/null
     ;;
 esac

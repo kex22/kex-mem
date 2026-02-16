@@ -25,12 +25,12 @@ Local long-term memory CLI tool + Claude Code plugin, based on a three-layer mem
 src/
   cli.ts              # Commander entry point
   commands/            # One file per CLI command
-    init.ts, log.ts, search.ts, recall.ts, compact.ts, reindex.ts, config.ts
+    init.ts, log.ts, search.ts, recall.ts, compact.ts, index.ts, config.ts
   lib/
-    paths.ts           # Path resolution (memory dir, db, MEMORY.md, daily logs)
+    paths.ts           # Path resolution (memory dir, db, MEMORY.md, USER.md, daily logs)
     db.ts              # SQLite FTS5 + sqlite-vec init, upsert, hybrid search
     markdown.ts        # Markdown file read/write helpers
-    config.ts          # Template constants (CLAUDE.md injection, MEMORY.md template)
+    config.ts          # Template constants (CLAUDE.md injection, MEMORY.md/USER.md templates, hook templates)
     config-store.ts    # Vector search config (memory/.kex-mem.json)
     embedder.ts        # Embedding interface + Local/OpenAI implementations
 ```
@@ -40,6 +40,7 @@ src/
 | Layer | Storage | Access |
 |---|---|---|
 | Durable | `memory/MEMORY.md` | `kex-mem recall --durable` |
+| User | `memory/USER.md` | `kex-mem recall --user` |
 | Ephemeral | `memory/YYYY-MM-DD.md` | `kex-mem recall` |
 | Deep Search | `memory/.kex-mem.db` | `kex-mem search "query"` |
 
@@ -51,6 +52,8 @@ src/
 - FTS5 with porter+unicode61 tokenizer for full-text search
 - Hybrid search (v0.2): sqlite-vec for vector KNN + FTS5 BM25, RRF fusion (70% vec / 30% FTS)
 - Vector search is opt-in via `kex-mem config set embedding local|openai`, auto-degrades to pure FTS5 when sqlite-vec unavailable
+- Incremental indexing (v0.3): mtime-based skip, single-file mode for PostToolUse hooks
+- `compact --smart` outputs structured prompt for LLM-driven compaction (no API calls)
 
 ## Reference
 

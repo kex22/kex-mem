@@ -33,6 +33,10 @@ export function durableMemoryPath(projectRoot: string): string {
   return join(memoryDir(projectRoot), "MEMORY.md");
 }
 
+export function userMemoryPath(projectRoot: string): string {
+  return join(memoryDir(projectRoot), "USER.md");
+}
+
 export function dailyLogPath(projectRoot: string, date: Date = new Date()): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");

@@ -1,9 +1,9 @@
 import { readdirSync, existsSync, mkdirSync, renameSync } from "node:fs";
 import { join } from "node:path";
-import { findProjectRoot, memoryDir, formatDate } from "../lib/paths.js";
+import { findProjectRoot, memoryDir, durableMemoryPath, formatDate } from "../lib/paths.js";
 import { readMarkdown, writeMarkdown } from "../lib/markdown.js";
 
-export function compactCommand(opts: { auto?: boolean; days?: string }): void {
+export function compactCommand(opts: { auto?: boolean; smart?: boolean; days?: string }): void {
   const root = findProjectRoot();
   const memDir = memoryDir(root);
   const maxAge = parseInt(opts.days || "30", 10);
@@ -21,6 +21,29 @@ export function compactCommand(opts: { auto?: boolean; days?: string }): void {
 
   if (oldFiles.length === 0) {
     console.log("No logs older than " + maxAge + " days.");
+    return;
+  }
+
+  if (opts.smart) {
+    const memoryContent = readMarkdown(durableMemoryPath(root));
+    let output = `## kex-mem compact --smart\n\n`;
+    output += `### Instructions\n`;
+    output += `Review the daily logs below and update memory/MEMORY.md:\n`;
+    output += `1. Extract key decisions, conventions, architecture notes, and bug fixes\n`;
+    output += `2. Merge into appropriate sections of MEMORY.md (do NOT duplicate)\n`;
+    output += `3. Delete the processed daily log files listed below\n`;
+    output += `4. Run \`kex-mem index\` after all changes\n\n`;
+    output += `### Current MEMORY.md\n\`\`\`markdown\n${memoryContent}\n\`\`\`\n\n`;
+    output += `### Daily Logs to Process\n\n`;
+    for (const f of oldFiles) {
+      const content = readMarkdown(join(memDir, f));
+      output += `#### ${f}\n\`\`\`markdown\n${content}\n\`\`\`\n\n`;
+    }
+    output += `### Files to Delete After Processing\n`;
+    for (const f of oldFiles) {
+      output += `- memory/${f}\n`;
+    }
+    console.log(output);
     return;
   }
 

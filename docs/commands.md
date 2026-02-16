@@ -12,15 +12,17 @@ kex-mem init [--hooks]
 1. 向上查找项目根目录（.git / package.json / CLAUDE.md）
 2. 创建 `memory/` 目录
 3. 创建 `memory/MEMORY.md`（初始模板）
-4. 创建 SQLite 数据库 `memory/.kex-mem.db`，建立 FTS5 表
+4. 创建 `memory/USER.md`（用户偏好模板，不覆盖已有）
+5. 创建 SQLite 数据库 `memory/.kex-mem.db`，建立 FTS5 表
 5. 检测 sqlite-vec 可用性，输出提示
 6. 在 CLAUDE.md 中注入 kex-mem 使用指令（`<!-- kex-mem:start/end -->` 标记）
-7. `--hooks`：创建 `.claude-plugin` 目录，提示配置 PostToolUse hook
+7. `--hooks`：写入 `.claude-plugin/plugin.json` 和 `hooks/post-tool.sh`（chmod +x）
 
 输出：
 ```
 Created memory/
 Created memory/MEMORY.md
+Created memory/USER.md
 sqlite-vec detected. Enable vector search: kex-mem config set embedding local
 Initialized memory/.kex-mem.db
 Updated CLAUDE.md
@@ -90,6 +92,7 @@ kex-mem recall              # 今天 + 昨天
 kex-mem recall 2026-02-10   # 指定日期
 kex-mem recall --week        # 最近 7 天（摘要视图）
 kex-mem recall --durable     # 显示 MEMORY.md
+kex-mem recall --user        # 显示 USER.md（用户偏好）
 ```
 
 行为：
@@ -97,6 +100,7 @@ kex-mem recall --durable     # 显示 MEMORY.md
 - 指定日期：读取该日期的日志
 - `--week`：最近 7 天，每天完整内容，`---` 分隔
 - `--durable`：输出 memory/MEMORY.md 内容
+- `--user`：输出 memory/USER.md 内容
 
 无日志时：
 ```
@@ -105,21 +109,24 @@ No log for 2026-02-10.
 
 ## kex-mem index
 
-从 Markdown 文件重建搜索索引。
+索引 Markdown 文件（增量模式为默认）。
 
 ```bash
-kex-mem index
+kex-mem index                    # 增量索引（mtime 比对，跳过未变更）
+kex-mem index 2026-02-15.md      # 单文件索引
+kex-mem index --full             # 全量重建
 ```
 
 行为：
-1. 扫描 `memory/*.md`
-2. 提取标题（首个 # 标题）和正文
-3. 写入 FTS5 表（事务批量插入）
-4. 向量搜索启用时：批量生成 embedding，写入 vec_entries
+- **增量模式**（默认）：比对 mtime，只处理变更文件 + 清理已删除文件
+- **单文件模式**：只索引指定文件，文件不存在则从索引删除
+- **全量重建**：清空 vec 后全量重建
 
 输出：
 ```
-Indexed 47 files.
+Indexed 3 files (12 skipped, 1 removed).
+Indexed 47 files (full rebuild).
+Indexed 2026-02-15.md
 ```
 
 ## kex-mem compact
@@ -129,6 +136,7 @@ Indexed 47 files.
 ```bash
 kex-mem compact              # 列出可归档的旧日志
 kex-mem compact --auto       # 自动按月归档
+kex-mem compact --smart      # 输出结构化 prompt 供 LLM 提炼
 kex-mem compact --days 14    # 自定义阈值（默认 30 天）
 ```
 
@@ -150,6 +158,9 @@ Run with --auto to archive by month.
 ```
 Archived 12 files for 2026-01
 ```
+
+**--smart 模式**（LLM 辅助提炼）：
+输出结构化 prompt 到 stdout，包含当前 MEMORY.md 和所有旧日志内容，供 LLM 读取后自行更新 MEMORY.md 并删除已处理日志。不调用任何 API。
 
 ## kex-mem config
 

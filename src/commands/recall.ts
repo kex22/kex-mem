@@ -1,14 +1,24 @@
 import { existsSync } from "node:fs";
-import { findProjectRoot, dailyLogPath, durableMemoryPath, formatDate } from "../lib/paths.js";
+import { findProjectRoot, dailyLogPath, durableMemoryPath, userMemoryPath, formatDate } from "../lib/paths.js";
 import { readMarkdown } from "../lib/markdown.js";
 
-export function recallCommand(date?: string, opts: { durable?: boolean; week?: boolean } = {}): void {
+export function recallCommand(date?: string, opts: { durable?: boolean; user?: boolean; week?: boolean } = {}): void {
   const root = findProjectRoot();
 
   if (opts.durable) {
     const content = readMarkdown(durableMemoryPath(root));
     if (!content) {
       console.log("No durable memory found. Run `kex-mem init` first.");
+      return;
+    }
+    console.log(content);
+    return;
+  }
+
+  if (opts.user) {
+    const content = readMarkdown(userMemoryPath(root));
+    if (!content) {
+      console.log("No user preferences found. Run `kex-mem init` to create USER.md.");
       return;
     }
     console.log(content);

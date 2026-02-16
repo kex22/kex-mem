@@ -292,3 +292,8 @@ export function clearVecEntries(db: Database): void {
     // vec table may not exist
   }
 }
+
+export function getAllIndexedFilepaths(db: Database): string[] {
+  const rows = db.prepare("SELECT filepath FROM file_meta").all() as { filepath: string }[];
+  return rows.map((r) => r.filepath);
+}
