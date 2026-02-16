@@ -8,5 +8,5 @@ export default defineConfig({
   clean: true,
   splitting: false,
   banner: { js: "#!/usr/bin/env bun" },
-  external: ["bun:sqlite"],
+  external: ["bun:sqlite", "sqlite-vec", "@huggingface/transformers"],
 });

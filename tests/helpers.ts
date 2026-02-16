@@ -7,7 +7,7 @@ import { tmpdir } from "node:os";
  * so findProjectRoot() can locate it.
  */
 export function makeTempProject(): string {
-  const dir = mkdtempSync(join(tmpdir(), "longmem-test-"));
+  const dir = mkdtempSync(join(tmpdir(), "kex-mem-test-"));
   mkdirSync(join(dir, "memory"), { recursive: true });
   return dir;
 }
@@ -28,6 +28,25 @@ export function captureOutput(fn: () => void): { stdout: string[]; stderr: strin
   console.error = (...args: unknown[]) => stderr.push(args.map(String).join(" "));
   try {
     fn();
+  } finally {
+    console.log = origLog;
+    console.error = origErr;
+  }
+  return { stdout, stderr };
+}
+
+/**
+ * Capture console.log / console.error output during an async function call.
+ */
+export async function captureOutputAsync(fn: () => Promise<void>): Promise<{ stdout: string[]; stderr: string[] }> {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const origLog = console.log;
+  const origErr = console.error;
+  console.log = (...args: unknown[]) => stdout.push(args.map(String).join(" "));
+  console.error = (...args: unknown[]) => stderr.push(args.map(String).join(" "));
+  try {
+    await fn();
   } finally {
     console.log = origLog;
     console.error = origErr;

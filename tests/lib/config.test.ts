@@ -9,11 +9,11 @@ import {
 describe("config", () => {
   describe("markers", () => {
     test("start marker is an HTML comment", () => {
-      expect(CLAUDE_MD_MARKER_START).toBe("<!-- longmem:start -->");
+      expect(CLAUDE_MD_MARKER_START).toBe("<!-- kex-mem:start -->");
     });
 
     test("end marker is an HTML comment", () => {
-      expect(CLAUDE_MD_MARKER_END).toBe("<!-- longmem:end -->");
+      expect(CLAUDE_MD_MARKER_END).toBe("<!-- kex-mem:end -->");
     });
   });
 

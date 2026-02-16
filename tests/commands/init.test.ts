@@ -43,7 +43,7 @@ describe("initCommand", () => {
 
   test("creates SQLite database", () => {
     captureOutput(() => initCommand({}));
-    expect(existsSync(join(tmp, "memory", ".longmem.db"))).toBe(true);
+    expect(existsSync(join(tmp, "memory", ".kex-mem.db"))).toBe(true);
   });
 
   test("creates CLAUDE.md with injection", () => {

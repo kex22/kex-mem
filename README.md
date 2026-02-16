@@ -8,7 +8,7 @@
 |---|---|---|
 | Durable | `memory/MEMORY.md` | 长期决策、约定、架构 |
 | Ephemeral | `memory/YYYY-MM-DD.md` | 每日工作日志 |
-| Deep Search | `memory/.longmem.db` | SQLite FTS5 全文检索 |
+| Deep Search | `memory/.kex-mem.db` | SQLite FTS5 + sqlite-vec 混合搜索 |
 
 Markdown 是数据源，SQLite 只是搜索索引。人类和 AI 都能直接读写。
 
@@ -68,13 +68,15 @@ kex-mem compact --auto    # 按月归档
 ```
 src/
   cli.ts                 # Commander 入口
-  commands/              # init, log, search, recall, compact, reindex
+  commands/              # init, log, search, recall, compact, reindex, config
   lib/
     paths.ts             # 路径解析
-    db.ts                # SQLite FTS5
+    db.ts                # SQLite FTS5 + sqlite-vec
     markdown.ts          # Markdown 读写
     config.ts            # 模板常量
-tests/                   # 119 个单元测试
+    config-store.ts      # 向量搜索配置
+    embedder.ts          # Embedding 接口
+tests/                   # 169 个单元测试
 ```
 
 ## 开发
@@ -88,7 +90,7 @@ bun test
 ## 路线图
 
 - **v0.1** — FTS5 全文搜索，6 个核心命令 ✅
-- **v0.2** — sqlite-vec 向量搜索（可选）
+- **v0.2** — sqlite-vec 混合搜索 + `kex-mem config` ✅
 - **v0.3** — `compact --smart`（LLM 自动提炼）
 
 ## License

@@ -5,7 +5,7 @@ const program = new Command();
 program
   .name("kex-mem")
   .description("Local long-term memory for AI coding assistants")
-  .version("0.1.0");
+  .version("0.2.0");
 
 program
   .command("init")
@@ -23,7 +23,7 @@ program
   .option("-t, --tag <tag>", "Tag: decision, bug, convention, todo")
   .action(async (message, opts) => {
     const { logCommand } = await import("./commands/log.js");
-    logCommand(message, opts);
+    await logCommand(message, opts);
   });
 
 program
@@ -33,7 +33,7 @@ program
   .option("-l, --limit <n>", "Max results", "10")
   .action(async (query, opts) => {
     const { searchCommand } = await import("./commands/search.js");
-    searchCommand(query, opts);
+    await searchCommand(query, opts);
   });
 
 program
@@ -62,7 +62,16 @@ program
   .description("Rebuild FTS5 index from markdown files")
   .action(async () => {
     const { reindexCommand } = await import("./commands/reindex.js");
-    reindexCommand();
+    await reindexCommand();
+  });
+
+program
+  .command("config")
+  .description("View or update kex-mem configuration")
+  .argument("[args...]", "set <key> <value>")
+  .action(async (args) => {
+    const { configCommand } = await import("./commands/config.js");
+    configCommand(args);
   });
 
 program.parse();

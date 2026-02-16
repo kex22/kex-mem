@@ -17,8 +17,8 @@ describe("db", () => {
 
   beforeEach(() => {
     tmp = makeTempProject();
-    dbFile = join(tmp, "memory", ".longmem.db");
-    db = openDb(dbFile);
+    dbFile = join(tmp, "memory", ".kex-mem.db");
+    db = openDb(dbFile).db;
   });
 
   afterEach(() => {
@@ -48,7 +48,7 @@ describe("db", () => {
 
     test("creates parent directories if missing", () => {
       const nested = join(tmp, "deep", "nested", "dir", "test.db");
-      const db2 = openDb(nested);
+      const db2 = openDb(nested).db;
       const { existsSync } = require("node:fs");
       expect(existsSync(nested)).toBe(true);
       db2.close();
@@ -56,14 +56,14 @@ describe("db", () => {
 
     test("is idempotent (can open same db twice)", () => {
       db.close();
-      const db2 = openDb(dbFile);
+      const db2 = openDb(dbFile).db;
       const tables = db2
         .prepare("SELECT name FROM sqlite_master WHERE type='table'")
         .all();
       expect(tables.length).toBeGreaterThanOrEqual(2);
       db2.close();
       // reopen for afterEach
-      db = openDb(dbFile);
+      db = openDb(dbFile).db;
     });
   });
 

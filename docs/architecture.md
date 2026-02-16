@@ -53,23 +53,26 @@ OpenClaw 不只是三层记忆，而是一套 agent 文件操作系统：
 | MEMORY.md | memory/MEMORY.md | 持久记忆，核心 |
 | daily logs | memory/YYYY-MM-DD.md | 每日日志，核心 |
 | TOOLS.md | CLAUDE.md 中的 kex-mem 指令 | 告诉 Claude 有哪些命令可用 |
-| hybrid search | SQLite FTS5 (v0.1) + sqlite-vec (v0.2) | 渐进式引入 |
+| hybrid search | SQLite FTS5 + sqlite-vec | 自动检测 sqlite-vec，不可用时降级为纯 FTS5 |
 | pre-compaction flush | kex-mem compact | 手动/Claude 触发，非自动 silent turn |
 
 ### 数据流
 
 ```
 写入:
-  Claude 决策/发现 → kex-mem log → memory/YYYY-MM-DD.md → FTS5 索引
+  Claude 决策/发现 → kex-mem log → memory/YYYY-MM-DD.md → FTS5 索引 (+ 向量 embedding)
 
 读取:
   Claude 需要上下文 → kex-mem recall / search → stdout → Claude context
+
+搜索:
+  kex-mem search → 向量启用时混合搜索 (RRF: BM25 30% + 向量 70%)，否则纯 FTS5
 
 整理:
   旧日志积累 → kex-mem compact → Claude 提炼 → 更新 MEMORY.md → 归档旧日志
 
 索引:
-  memory/*.md 变更 → kex-mem index → SQLite FTS5 (+ sqlite-vec v0.2)
+  memory/*.md 变更 → kex-mem index → SQLite FTS5 + vec_entries (向量启用时)
 ```
 
 ### 目录结构
@@ -84,11 +87,10 @@ project-root/
 │   ├── 2026-02-14.md              # 昨日日志（Git tracked）
 │   ├── archive/                   # compact 归档（Git tracked）
 │   │   └── 2026-01.md
-│   ├── .longmem.db                # 搜索索引（gitignore，可重建）
-│   └── .hooks/                    # hook 脚本（gitignore）
-│       └── post-tool.sh
-└── .claude/
-    └── settings.local.json        # hook 配置（可选）
+│   ├── .kex-mem.db                # 搜索索引（gitignore，可重建）
+│   ├── .kex-mem.json              # 向量搜索配置（gitignore，含 API key）
+└── .claude-plugin/                # Claude Code 插件配置（可选）
+    └── plugin.json
 ```
 
 ### 上下文注入

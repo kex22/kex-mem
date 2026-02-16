@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { join } from "node:path";
 import { readFileSync, existsSync } from "node:fs";
-import { makeTempProject, cleanTempProject, captureOutput } from "../helpers.js";
+import { makeTempProject, cleanTempProject, captureOutput, captureOutputAsync } from "../helpers.js";
 import { initCommand } from "../../src/commands/init.js";
 import { logCommand } from "../../src/commands/log.js";
 import { formatDate } from "../../src/lib/paths.js";
@@ -22,36 +22,36 @@ describe("logCommand", () => {
     cleanTempProject(tmp);
   });
 
-  test("creates daily log file", () => {
-    captureOutput(() => logCommand("test entry", {}));
+  test("creates daily log file", async () => {
+    await captureOutputAsync(() => logCommand("test entry", {}));
     const today = formatDate();
     expect(existsSync(join(tmp, "memory", `${today}.md`))).toBe(true);
   });
 
-  test("daily log has date heading", () => {
-    captureOutput(() => logCommand("test entry", {}));
+  test("daily log has date heading", async () => {
+    await captureOutputAsync(() => logCommand("test entry", {}));
     const today = formatDate();
     const content = readFileSync(join(tmp, "memory", `${today}.md`), "utf-8");
     expect(content).toContain(`# ${today}`);
   });
 
-  test("entry includes timestamp", () => {
-    captureOutput(() => logCommand("test entry", {}));
+  test("entry includes timestamp", async () => {
+    await captureOutputAsync(() => logCommand("test entry", {}));
     const today = formatDate();
     const content = readFileSync(join(tmp, "memory", `${today}.md`), "utf-8");
     // Should match HH:MM pattern
     expect(content).toMatch(/- \d{2}:\d{2} test entry/);
   });
 
-  test("entry includes tag when provided", () => {
-    captureOutput(() => logCommand("chose Bun", { tag: "decision" }));
+  test("entry includes tag when provided", async () => {
+    await captureOutputAsync(() => logCommand("chose Bun", { tag: "decision" }));
     const today = formatDate();
     const content = readFileSync(join(tmp, "memory", `${today}.md`), "utf-8");
     expect(content).toContain("[decision]");
   });
 
-  test("entry without tag has no brackets", () => {
-    captureOutput(() => logCommand("plain note", {}));
+  test("entry without tag has no brackets", async () => {
+    await captureOutputAsync(() => logCommand("plain note", {}));
     const today = formatDate();
     const content = readFileSync(join(tmp, "memory", `${today}.md`), "utf-8");
     expect(content).toMatch(/- \d{2}:\d{2} plain note/);
@@ -59,10 +59,10 @@ describe("logCommand", () => {
     expect(content).not.toMatch(/- \d{2}:\d{2} \[/);
   });
 
-  test("multiple logs append to same file", () => {
-    captureOutput(() => logCommand("first", {}));
-    captureOutput(() => logCommand("second", {}));
-    captureOutput(() => logCommand("third", {}));
+  test("multiple logs append to same file", async () => {
+    await captureOutputAsync(() => logCommand("first", {}));
+    await captureOutputAsync(() => logCommand("second", {}));
+    await captureOutputAsync(() => logCommand("third", {}));
     const today = formatDate();
     const content = readFileSync(join(tmp, "memory", `${today}.md`), "utf-8");
     expect(content).toContain("first");
@@ -73,9 +73,9 @@ describe("logCommand", () => {
     expect(headingCount).toBe(1);
   });
 
-  test("all valid tags are accepted", () => {
+  test("all valid tags are accepted", async () => {
     for (const tag of ["decision", "bug", "convention", "todo"]) {
-      captureOutput(() => logCommand(`entry for ${tag}`, { tag }));
+      await captureOutputAsync(() => logCommand(`entry for ${tag}`, { tag }));
     }
     const today = formatDate();
     const content = readFileSync(join(tmp, "memory", `${today}.md`), "utf-8");
@@ -85,13 +85,13 @@ describe("logCommand", () => {
     expect(content).toContain("[todo]");
   });
 
-  test("invalid tag prints error", () => {
+  test("invalid tag prints error", async () => {
     // logCommand calls process.exit(1) on invalid tag, mock it
     const origExit = process.exit;
     let exitCode: number | undefined;
     process.exit = ((code?: number) => { exitCode = code; }) as any;
     try {
-      const { stderr } = captureOutput(() => logCommand("bad", { tag: "invalid" }));
+      const { stderr } = await captureOutputAsync(() => logCommand("bad", { tag: "invalid" }));
       expect(exitCode).toBe(1);
       expect(stderr.join(" ")).toContain("Invalid tag");
     } finally {
@@ -99,17 +99,17 @@ describe("logCommand", () => {
     }
   });
 
-  test("prints confirmation with date", () => {
-    const { stdout } = captureOutput(() => logCommand("test", {}));
+  test("prints confirmation with date", async () => {
+    const { stdout } = await captureOutputAsync(() => logCommand("test", {}));
     expect(stdout.join(" ")).toContain(`Logged to ${formatDate()}`);
   });
 
-  test("updates FTS index after logging", () => {
-    captureOutput(() => logCommand("unique_searchable_term_xyz", {}));
+  test("updates FTS index after logging", async () => {
+    await captureOutputAsync(() => logCommand("unique_searchable_term_xyz", {}));
     // Verify via search
     const { openDb, searchFts } = require("../../src/lib/db.js");
     const { dbPath } = require("../../src/lib/paths.js");
-    const db = openDb(dbPath(tmp));
+    const db = openDb(dbPath(tmp)).db;
     const results = searchFts(db, "unique_searchable_term_xyz");
     expect(results.length).toBe(1);
     db.close();

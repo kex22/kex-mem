@@ -9,7 +9,43 @@ export interface SearchResult {
   rank: number;
 }
 
-export function openDb(dbFilePath: string): Database {
+export interface DbHandle {
+  db: Database;
+  vecEnabled: boolean;
+  vecDimension: number;
+}
+
+function tryLoadVec(db: Database): boolean {
+  try {
+    // Bun supports require() in ESM; this avoids making openDb() async
+    // just for extension loading. Not portable to Node ESM.
+    const sqliteVec = require("sqlite-vec");
+    sqliteVec.load(db);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function getExistingVecDimension(db: Database): number | null {
+  try {
+    const row = db
+      .prepare(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='vec_entries'",
+      )
+      .get() as { sql: string } | null;
+    if (!row) return null;
+    const match = row.sql.match(/float\[(\d+)\]/);
+    return match ? parseInt(match[1], 10) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function openDb(
+  dbFilePath: string,
+  opts?: { vecDimension?: number },
+): DbHandle {
   const dir = dirname(dbFilePath);
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
@@ -33,7 +69,23 @@ export function openDb(dbFilePath: string): Database {
     );
   `);
 
-  return db;
+  const vecEnabled = tryLoadVec(db);
+  const requestedDim = opts?.vecDimension ?? 384;
+
+  if (vecEnabled) {
+    const existingDim = getExistingVecDimension(db);
+    if (existingDim !== null && existingDim !== requestedDim) {
+      db.run("DROP TABLE IF EXISTS vec_entries");
+    }
+    db.run(`
+      CREATE VIRTUAL TABLE IF NOT EXISTS vec_entries USING vec0(
+        filepath TEXT,
+        embedding float[${requestedDim}] distance_metric=cosine
+      );
+    `);
+  }
+
+  return { db, vecEnabled, vecDimension: vecEnabled ? requestedDim : 0 };
 }
 
 export function upsertDocument(
@@ -43,6 +95,7 @@ export function upsertDocument(
   body: string,
   mtimeMs: number,
   sizeBytes: number,
+  embedding?: Float32Array,
 ): void {
   const existing = db
     .prepare("SELECT mtime_ms FROM file_meta WHERE filepath = ?")
@@ -62,6 +115,17 @@ export function upsertDocument(
        VALUES (?, ?, ?)
        ON CONFLICT(filepath) DO UPDATE SET mtime_ms = excluded.mtime_ms, size_bytes = excluded.size_bytes`,
     ).run(filepath, mtimeMs, sizeBytes);
+
+    if (embedding) {
+      try {
+        db.prepare("DELETE FROM vec_entries WHERE filepath = ?").run(filepath);
+        db.prepare(
+          "INSERT INTO vec_entries (filepath, embedding) VALUES (?, ?)",
+        ).run(filepath, new Uint8Array(embedding.buffer));
+      } catch {
+        // vec_entries table may not exist if sqlite-vec is unavailable
+      }
+    }
   });
 
   txn();
@@ -83,10 +147,128 @@ export function searchFts(
   return stmt.all(query, limit) as SearchResult[];
 }
 
-export function removeDocument(db: Database, filepath: string): void {
+function searchVec(
+  db: Database,
+  embedding: Float32Array,
+  limit: number,
+): { filepath: string; distance: number }[] {
+  const stmt = db.prepare(`
+    SELECT filepath, distance
+    FROM vec_entries
+    WHERE embedding MATCH ?
+    ORDER BY distance
+    LIMIT ?
+  `);
+  return stmt.all(
+    new Uint8Array(embedding.buffer),
+    limit,
+  ) as { filepath: string; distance: number }[];
+}
+
+export interface HybridSearchResult extends SearchResult {
+  score: number;
+}
+
+export interface HybridSearchOutput {
+  results: HybridSearchResult[];
+  ftsError?: string;
+}
+
+export function hybridSearch(
+  handle: DbHandle,
+  ftsQuery: string,
+  queryEmbedding: Float32Array | null,
+  limit: number = 10,
+): HybridSearchOutput {
+  const { db, vecEnabled } = handle;
+  const pool = limit * 2;
+
+  // FTS results
+  let ftsResults: SearchResult[] = [];
+  let ftsError: string | undefined;
+  try {
+    ftsResults = searchFts(db, ftsQuery, pool);
+  } catch (err: any) {
+    ftsError = err.message;
+  }
+
+  // If vec not available or no embedding, return FTS-only
+  if (!vecEnabled || !queryEmbedding) {
+    return {
+      results: ftsResults.slice(0, limit).map((r, i) => ({
+        ...r,
+        score: 1 / (60 + i),
+      })),
+      ftsError,
+    };
+  }
+
+  // Vec results
+  const vecResults = searchVec(db, queryEmbedding, pool);
+
+  // Build rank maps
+  const ftsRank = new Map<string, number>();
+  ftsResults.forEach((r, i) => ftsRank.set(r.filepath, i));
+
+  const vecRank = new Map<string, number>();
+  vecResults.forEach((r, i) => vecRank.set(r.filepath, i));
+
+  // Collect all unique filepaths
+  const allFiles = new Set([...ftsRank.keys(), ...vecRank.keys()]);
+
+  // Build snippet map from FTS results
+  const snippetMap = new Map<string, SearchResult>();
+  for (const r of ftsResults) snippetMap.set(r.filepath, r);
+
+  // RRF fusion: score(d) = 0.3/(60+rank_bm25) + 0.7/(60+rank_vec)
+  const scored: HybridSearchResult[] = [];
+  for (const fp of allFiles) {
+    const ftsR = ftsRank.get(fp);
+    const vecR = vecRank.get(fp);
+    const ftsScore = ftsR !== undefined ? 0.3 / (60 + ftsR) : 0;
+    const vecScore = vecR !== undefined ? 0.7 / (60 + vecR) : 0;
+    const score = ftsScore + vecScore;
+
+    let existing = snippetMap.get(fp);
+    // Fill in title/snippet for vec-only results via FTS table lookup
+    if (!existing) {
+      const row = db
+        .prepare("SELECT title, body FROM memory_fts WHERE filepath = ?")
+        .get(fp) as { title: string; body: string } | null;
+      if (row) {
+        existing = {
+          filepath: fp,
+          title: row.title,
+          snippet: row.body.length > 200 ? row.body.slice(0, 200) + "..." : row.body,
+          rank: 0,
+        };
+      }
+    }
+
+    scored.push({
+      filepath: fp,
+      title: existing?.title ?? "",
+      snippet: existing?.snippet ?? "",
+      rank: existing?.rank ?? 0,
+      score,
+    });
+  }
+
+  scored.sort((a, b) => b.score - a.score);
+  return { results: scored.slice(0, limit), ftsError };
+}
+
+export function removeDocument(
+  db: Database,
+  filepath: string,
+  vecEnabled?: boolean,
+): void {
   const txn = db.transaction(() => {
     db.prepare("DELETE FROM memory_fts WHERE filepath = ?").run(filepath);
     db.prepare("DELETE FROM file_meta WHERE filepath = ?").run(filepath);
+    if (vecEnabled) {
+      db.prepare("DELETE FROM vec_entries WHERE filepath = ?").run(filepath);
+    }
   });
   txn();
 }
@@ -95,7 +277,18 @@ export function getFileMeta(
   db: Database,
   filepath: string,
 ): { mtime_ms: number; size_bytes: number } | undefined {
-  return (db
-    .prepare("SELECT mtime_ms, size_bytes FROM file_meta WHERE filepath = ?")
-    .get(filepath) as { mtime_ms: number; size_bytes: number } | null) ?? undefined;
+  return (
+    (db
+      .prepare("SELECT mtime_ms, size_bytes FROM file_meta WHERE filepath = ?")
+      .get(filepath) as { mtime_ms: number; size_bytes: number } | null) ??
+    undefined
+  );
+}
+
+export function clearVecEntries(db: Database): void {
+  try {
+    db.run("DELETE FROM vec_entries");
+  } catch {
+    // vec table may not exist
+  }
 }

@@ -1,6 +1,6 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { join } from "node:path";
-import { makeTempProject, cleanTempProject, captureOutput } from "../helpers.js";
+import { makeTempProject, cleanTempProject, captureOutput, captureOutputAsync } from "../helpers.js";
 import { initCommand } from "../../src/commands/init.js";
 import { logCommand } from "../../src/commands/log.js";
 import { searchCommand } from "../../src/commands/search.js";
@@ -21,40 +21,40 @@ describe("searchCommand", () => {
     cleanTempProject(tmp);
   });
 
-  test("prints 'No results.' when nothing matches", () => {
-    const { stdout } = captureOutput(() => searchCommand("nonexistent", {}));
+  test("prints 'No results.' when nothing matches", async () => {
+    const { stdout } = await captureOutputAsync(() => searchCommand("nonexistent", {}));
     expect(stdout.join(" ")).toContain("No results.");
   });
 
-  test("finds logged entries", () => {
-    captureOutput(() => logCommand("decided to use PostgreSQL for persistence", { tag: "decision" }));
-    const { stdout } = captureOutput(() => searchCommand("PostgreSQL", {}));
+  test("finds logged entries", async () => {
+    await captureOutputAsync(() => logCommand("decided to use PostgreSQL for persistence", { tag: "decision" }));
+    const { stdout } = await captureOutputAsync(() => searchCommand("PostgreSQL", {}));
     const output = stdout.join("\n");
     expect(output).toContain("PostgreSQL");
   });
 
-  test("respects --limit option", () => {
+  test("respects --limit option", async () => {
     for (let i = 0; i < 5; i++) {
-      captureOutput(() => logCommand(`searchable item number ${i}`, {}));
+      await captureOutputAsync(() => logCommand(`searchable item number ${i}`, {}));
     }
     // Force different mtime by reindexing
     const { reindexCommand } = require("../../src/commands/reindex.js");
-    captureOutput(() => reindexCommand());
+    await captureOutputAsync(() => reindexCommand());
 
-    const { stdout } = captureOutput(() => searchCommand("searchable", { limit: "2" }));
+    const { stdout } = await captureOutputAsync(() => searchCommand("searchable", { limit: "2" }));
     // Should have at most 2 result lines (one file since all entries are in same daily log)
     expect(stdout.length).toBeLessThanOrEqual(2);
   });
 
-  test("output format includes filepath in brackets", () => {
-    captureOutput(() => logCommand("format test entry", {}));
-    const { stdout } = captureOutput(() => searchCommand("format", {}));
+  test("output format includes filepath in brackets", async () => {
+    await captureOutputAsync(() => logCommand("format test entry", {}));
+    const { stdout } = await captureOutputAsync(() => searchCommand("format", {}));
     expect(stdout[0]).toMatch(/^\[.+\.md\]/);
   });
 
-  test("searches across multiple days", () => {
+  test("searches across multiple days", async () => {
     // Log something today
-    captureOutput(() => logCommand("today unique_alpha", {}));
+    await captureOutputAsync(() => logCommand("today unique_alpha", {}));
 
     // Manually create a yesterday log
     const { writeFileSync } = require("node:fs");
@@ -66,28 +66,28 @@ describe("searchCommand", () => {
 
     // Reindex to pick up the manual file
     const { reindexCommand } = require("../../src/commands/reindex.js");
-    captureOutput(() => reindexCommand());
+    await captureOutputAsync(() => reindexCommand());
 
-    const { stdout: r1 } = captureOutput(() => searchCommand("unique_alpha", {}));
+    const { stdout: r1 } = await captureOutputAsync(() => searchCommand("unique_alpha", {}));
     expect(r1.join(" ")).toContain("unique_alpha");
 
-    const { stdout: r2 } = captureOutput(() => searchCommand("unique_beta", {}));
+    const { stdout: r2 } = await captureOutputAsync(() => searchCommand("unique_beta", {}));
     expect(r2.join(" ")).toContain("unique_beta");
   });
 
-  test("empty string query does not crash", () => {
-    const { stdout } = captureOutput(() => searchCommand("", {}));
+  test("empty string query does not crash", async () => {
+    const { stdout } = await captureOutputAsync(() => searchCommand("", {}));
     const output = stdout.join(" ");
     expect(output).toMatch(/No results\.|Invalid query/);
   });
 
-  test("unclosed FTS5 quote prints Invalid query", () => {
-    const { stdout } = captureOutput(() => searchCommand('"hello', {}));
+  test("unclosed FTS5 quote prints Invalid query", async () => {
+    const { stdout } = await captureOutputAsync(() => searchCommand('"hello', {}));
     expect(stdout.join(" ")).toContain("Invalid query");
   });
 
-  test("lone asterisk query does not crash", () => {
-    const { stdout } = captureOutput(() => searchCommand("*", {}));
+  test("lone asterisk query does not crash", async () => {
+    const { stdout } = await captureOutputAsync(() => searchCommand("*", {}));
     const output = stdout.join(" ");
     expect(output).toMatch(/No results\.|Invalid query/);
   });

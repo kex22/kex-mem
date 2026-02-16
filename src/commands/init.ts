@@ -2,6 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { findProjectRoot, memoryDir, dbPath, durableMemoryPath, claudeMdPath } from "../lib/paths.js";
 import { openDb } from "../lib/db.js";
 import { CLAUDE_MD_INJECTION, CLAUDE_MD_MARKER_START, CLAUDE_MD_MARKER_END, MEMORY_MD_TEMPLATE } from "../lib/config.js";
+import { loadConfig, saveConfig } from "../lib/config-store.js";
 
 export function initCommand(opts: { hooks?: boolean }): void {
   const root = findProjectRoot();
@@ -20,9 +21,18 @@ export function initCommand(opts: { hooks?: boolean }): void {
     console.log(`Created ${durablePath}`);
   }
 
-  // Initialize SQLite DB
-  const db = openDb(dbPath(root));
-  db.close();
+  // Initialize SQLite DB + detect sqlite-vec
+  const config = loadConfig(root);
+  const handle = openDb(dbPath(root), { vecDimension: config.vector.dimension });
+  if (handle.vecEnabled) {
+    console.log("sqlite-vec detected. Enable vector search: kex-mem config set embedding local");
+  }
+  if (!handle.vecEnabled && config.vector.enabled) {
+    config.vector.enabled = false;
+    saveConfig(root, config);
+    console.log("sqlite-vec not available, vector search disabled.");
+  }
+  handle.db.close();
   console.log(`Initialized ${dbPath(root)}`);
 
   // Inject into CLAUDE.md

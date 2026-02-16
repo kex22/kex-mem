@@ -3,10 +3,12 @@ import { relative } from "node:path";
 import { findProjectRoot, dailyLogPath, dbPath, memoryDir, formatDate } from "../lib/paths.js";
 import { readMarkdown, appendMarkdown, extractTitle, extractBody } from "../lib/markdown.js";
 import { openDb, upsertDocument } from "../lib/db.js";
+import { loadConfig } from "../lib/config-store.js";
+import { createEmbedder } from "../lib/embedder.js";
 
 const VALID_TAGS = ["decision", "bug", "convention", "todo"] as const;
 
-export function logCommand(message: string, opts: { tag?: string }): void {
+export async function logCommand(message: string, opts: { tag?: string }): Promise<void> {
   const root = findProjectRoot();
   const now = new Date();
   const logPath = dailyLogPath(root, now);
@@ -31,13 +33,25 @@ export function logCommand(message: string, opts: { tag?: string }): void {
     appendMarkdown(logPath, entry);
   }
 
-  // Update FTS index
+  // Update FTS index + optional vector
   const content = readMarkdown(logPath);
   const stat = statSync(logPath);
   const relPath = relative(memoryDir(root), logPath);
-  const db = openDb(dbPath(root));
-  upsertDocument(db, relPath, extractTitle(content), extractBody(content), stat.mtimeMs, stat.size);
-  db.close();
+  const config = loadConfig(root);
+  const handle = openDb(dbPath(root), { vecDimension: config.vector.dimension });
+
+  let embedding: Float32Array | undefined;
+  if (handle.vecEnabled && config.vector.enabled) {
+    try {
+      const embedder = createEmbedder(config.vector.provider, config.vector.openaiKey);
+      embedding = await embedder.embed(extractBody(content));
+    } catch (err: any) {
+      console.error(`Embedding failed: ${err.message}`);
+    }
+  }
+
+  upsertDocument(handle.db, relPath, extractTitle(content), extractBody(content), stat.mtimeMs, stat.size, embedding);
+  handle.db.close();
 
   console.log(`Logged to ${formatDate(now)}`);
 }

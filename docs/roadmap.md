@@ -20,19 +20,20 @@ FTS5 全文搜索，跑通三层记忆的基本流程。
 
 发布：npm publish
 
-## v0.2 — 混合搜索
+## v0.2 — 混合搜索 ✓
 
 加入向量语义搜索，参考 OpenClaw 的 70/30 权重方案。
 
 新增：
-- sqlite-vec 向量存储
-- `kex-mem init --vector` 启用向量搜索
-- embedding 可插拔：本地 gte-small (transformers.js) / OpenAI API / Voyage API
+- sqlite-vec 向量存储（自动检测，不可用时降级为纯 FTS5）
+- `kex-mem config set embedding local|openai` 启用向量搜索
+- embedding 可插拔：本地 Xenova/gte-small (@huggingface/transformers, 384维) / OpenAI text-embedding-3-small (1536维)
 - 混合排序：向量 70% + BM25 30%，RRF 融合
 - `kex-mem config` 管理 embedding 来源和 API key
+- OpenAI API key 支持配置文件或 `OPENAI_API_KEY` 环境变量
 
 技术新增：
-- @xenova/transformers（本地 embedding）
+- @huggingface/transformers（本地 ONNX embedding）
 - sqlite-vec 扩展
 
 ## v0.3 — 自动化增强

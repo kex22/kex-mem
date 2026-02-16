@@ -71,8 +71,8 @@ describe("paths", () => {
       expect(memoryDir("/proj")).toBe(join("/proj", "memory"));
     });
 
-    test("dbPath returns <root>/memory/.longmem.db", () => {
-      expect(dbPath("/proj")).toBe(join("/proj", "memory", ".longmem.db"));
+    test("dbPath returns <root>/memory/.kex-mem.db", () => {
+      expect(dbPath("/proj")).toBe(join("/proj", "memory", ".kex-mem.db"));
     });
 
     test("durableMemoryPath returns <root>/memory/MEMORY.md", () => {

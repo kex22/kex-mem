@@ -1,4 +1,4 @@
-# longmem
+# kex-mem
 
 Local long-term memory CLI tool + Claude Code plugin, based on a three-layer memory architecture (Durable / Ephemeral / Deep Search).
 
@@ -25,12 +25,14 @@ Local long-term memory CLI tool + Claude Code plugin, based on a three-layer mem
 src/
   cli.ts              # Commander entry point
   commands/            # One file per CLI command
-    init.ts, log.ts, search.ts, recall.ts, compact.ts, reindex.ts
+    init.ts, log.ts, search.ts, recall.ts, compact.ts, reindex.ts, config.ts
   lib/
     paths.ts           # Path resolution (memory dir, db, MEMORY.md, daily logs)
-    db.ts              # SQLite FTS5 init, upsert, search
+    db.ts              # SQLite FTS5 + sqlite-vec init, upsert, hybrid search
     markdown.ts        # Markdown file read/write helpers
     config.ts          # Template constants (CLAUDE.md injection, MEMORY.md template)
+    config-store.ts    # Vector search config (memory/.kex-mem.json)
+    embedder.ts        # Embedding interface + Local/OpenAI implementations
 ```
 
 ## Three-Layer Memory
@@ -39,7 +41,7 @@ src/
 |---|---|---|
 | Durable | `memory/MEMORY.md` | `kex-mem recall --durable` |
 | Ephemeral | `memory/YYYY-MM-DD.md` | `kex-mem recall` |
-| Deep Search | `memory/.longmem.db` | `kex-mem search "query"` |
+| Deep Search | `memory/.kex-mem.db` | `kex-mem search "query"` |
 
 ## Key Design Decisions
 
@@ -47,7 +49,8 @@ src/
 - Claude Code integration via plugin.json + slash command + hooks (optional layer)
 - Markdown-first: human-readable files are the source of truth; SQLite is a search index
 - FTS5 with porter+unicode61 tokenizer for full-text search
-- No vector search in v0.1 (planned for v0.2 with sqlite-vec)
+- Hybrid search (v0.2): sqlite-vec for vector KNN + FTS5 BM25, RRF fusion (70% vec / 30% FTS)
+- Vector search is opt-in via `kex-mem config set embedding local|openai`, auto-degrades to pure FTS5 when sqlite-vec unavailable
 
 ## Reference
 

@@ -26,7 +26,7 @@ export function memoryDir(projectRoot: string): string {
 }
 
 export function dbPath(projectRoot: string): string {
-  return join(memoryDir(projectRoot), ".longmem.db");
+  return join(memoryDir(projectRoot), ".kex-mem.db");
 }
 
 export function durableMemoryPath(projectRoot: string): string {

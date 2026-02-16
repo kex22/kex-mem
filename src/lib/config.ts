@@ -1,5 +1,5 @@
-export const CLAUDE_MD_MARKER_START = "<!-- longmem:start -->";
-export const CLAUDE_MD_MARKER_END = "<!-- longmem:end -->";
+export const CLAUDE_MD_MARKER_START = "<!-- kex-mem:start -->";
+export const CLAUDE_MD_MARKER_END = "<!-- kex-mem:end -->";
 
 export const CLAUDE_MD_INJECTION = `${CLAUDE_MD_MARKER_START}
 ## kex-mem — Local Long-Term Memory
@@ -13,8 +13,10 @@ You have access to \`kex-mem\`, a local memory tool. Use it to persist and recal
 - \`kex-mem recall --week\` — show past 7 days
 - \`kex-mem recall 2025-01-15\` — show specific date
 - \`kex-mem log "message" --tag decision\` — record a memory (tags: decision, bug, convention, todo)
-- \`kex-mem search "query"\` — full-text search across all memories
+- \`kex-mem search "query"\` — hybrid search (semantic + keyword) across all memories
 - \`kex-mem search "query" --limit 20\` — search with custom limit
+- \`kex-mem config\` — view current configuration
+- \`kex-mem config set embedding local|openai\` — switch embedding provider
 
 ### When to Record
 

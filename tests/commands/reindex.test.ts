@@ -1,7 +1,7 @@
 import { describe, test, expect, beforeEach, afterEach } from "bun:test";
 import { join } from "node:path";
 import { writeFileSync } from "node:fs";
-import { makeTempProject, cleanTempProject, captureOutput } from "../helpers.js";
+import { makeTempProject, cleanTempProject, captureOutput, captureOutputAsync } from "../helpers.js";
 import { initCommand } from "../../src/commands/init.js";
 import { reindexCommand } from "../../src/commands/reindex.js";
 import { memoryDir } from "../../src/lib/paths.js";
@@ -24,13 +24,13 @@ describe("reindexCommand", () => {
     cleanTempProject(tmp);
   });
 
-  test("indexes markdown files in memory/", () => {
+  test("indexes markdown files in memory/", async () => {
     writeFileSync(join(memoryDir(tmp), "2025-01-01.md"), "# Jan 1\n\n- decided on Bun\n", "utf-8");
     writeFileSync(join(memoryDir(tmp), "2025-01-02.md"), "# Jan 2\n\n- fixed parser bug\n", "utf-8");
 
-    captureOutput(() => reindexCommand());
+    await captureOutputAsync(() => reindexCommand());
 
-    const db = openDb(dbPath(tmp));
+    const db = openDb(dbPath(tmp)).db;
     const r1 = searchFts(db, "Bun");
     expect(r1.length).toBe(1);
     expect(r1[0].filepath).toBe("2025-01-01.md");
@@ -41,54 +41,54 @@ describe("reindexCommand", () => {
     db.close();
   });
 
-  test("prints indexed file count", () => {
+  test("prints indexed file count", async () => {
     writeFileSync(join(memoryDir(tmp), "a.md"), "# A\n\ncontent a\n", "utf-8");
     writeFileSync(join(memoryDir(tmp), "b.md"), "# B\n\ncontent b\n", "utf-8");
 
     // MEMORY.md already exists from init, so total = 3
-    const { stdout } = captureOutput(() => reindexCommand());
+    const { stdout } = await captureOutputAsync(() => reindexCommand());
     expect(stdout.join(" ")).toContain("Indexed 3 files.");
   });
 
-  test("skips non-md files", () => {
+  test("skips non-md files", async () => {
     writeFileSync(join(memoryDir(tmp), "notes.txt"), "not markdown", "utf-8");
     writeFileSync(join(memoryDir(tmp), "data.json"), "{}", "utf-8");
 
-    const { stdout } = captureOutput(() => reindexCommand());
+    const { stdout } = await captureOutputAsync(() => reindexCommand());
     // Only MEMORY.md from init
     expect(stdout.join(" ")).toContain("Indexed 1 files.");
   });
 
-  test("skips empty markdown files", () => {
+  test("skips empty markdown files", async () => {
     writeFileSync(join(memoryDir(tmp), "empty.md"), "", "utf-8");
 
-    const { stdout } = captureOutput(() => reindexCommand());
+    const { stdout } = await captureOutputAsync(() => reindexCommand());
     // Only MEMORY.md
     expect(stdout.join(" ")).toContain("Indexed 1 files.");
   });
 
-  test("is idempotent (re-running produces same results)", () => {
+  test("is idempotent (re-running produces same results)", async () => {
     writeFileSync(join(memoryDir(tmp), "test.md"), "# Test\n\nidempotent content\n", "utf-8");
 
-    captureOutput(() => reindexCommand());
-    captureOutput(() => reindexCommand());
+    await captureOutputAsync(() => reindexCommand());
+    await captureOutputAsync(() => reindexCommand());
 
-    const db = openDb(dbPath(tmp));
+    const db = openDb(dbPath(tmp)).db;
     const results = searchFts(db, "idempotent");
     expect(results.length).toBe(1);
     db.close();
   });
 
-  test("picks up updated content", () => {
+  test("picks up updated content", async () => {
     const filePath = join(memoryDir(tmp), "evolving.md");
     writeFileSync(filePath, "# V1\n\nalpha content\n", "utf-8");
-    captureOutput(() => reindexCommand());
+    await captureOutputAsync(() => reindexCommand());
 
     // Update the file (mtime will change)
     writeFileSync(filePath, "# V2\n\nbeta content\n", "utf-8");
-    captureOutput(() => reindexCommand());
+    await captureOutputAsync(() => reindexCommand());
 
-    const db = openDb(dbPath(tmp));
+    const db = openDb(dbPath(tmp)).db;
     expect(searchFts(db, "beta").length).toBe(1);
     // Old content should be gone
     expect(searchFts(db, "alpha").length).toBe(0);
