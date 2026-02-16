@@ -16,7 +16,7 @@ Markdown 是数据源，SQLite 只是搜索索引。人类和 AI 都能直接读
 
 ```bash
 # 需要 Bun (内置 SQLite)
-bun install -g kex-mem
+bun install -g @kex22/kex-mem
 ```
 
 ## 快速开始
