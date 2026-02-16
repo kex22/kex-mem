@@ -101,4 +101,9 @@ describe("recallCommand", () => {
     const { stdout } = captureOutput(() => recallCommand());
     expect(stdout.join(" ")).toContain("No recent logs.");
   });
+
+  test("invalid date string handles gracefully", () => {
+    const { stdout } = captureOutput(() => recallCommand("not-a-date"));
+    expect(stdout.join(" ")).toContain("No log for not-a-date");
+  });
 });

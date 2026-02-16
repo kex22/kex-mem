@@ -6,7 +6,14 @@ export function searchCommand(query: string, opts: { limit?: string }): void {
   const limit = parseInt(opts.limit || "10", 10);
 
   const db = openDb(dbPath(root));
-  const results = searchFts(db, query, limit);
+  let results;
+  try {
+    results = searchFts(db, query, limit);
+  } catch (err: any) {
+    console.log(`Invalid query: ${err.message}`);
+    db.close();
+    return;
+  }
   db.close();
 
   if (results.length === 0) {

@@ -52,6 +52,18 @@ describe("paths", () => {
       expect(parsed.getMonth()).toBe(5);
       expect(parsed.getDate()).toBe(20);
     });
+
+    test("throws on invalid string 'abc'", () => {
+      expect(() => parseDate("abc")).toThrow();
+    });
+
+    test("throws on invalid month/day '2025-13-45'", () => {
+      expect(() => parseDate("2025-13-45")).toThrow();
+    });
+
+    test("throws on empty string", () => {
+      expect(() => parseDate("")).toThrow();
+    });
   });
 
   describe("path helpers", () => {

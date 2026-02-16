@@ -47,7 +47,11 @@ export function compactCommand(opts: { auto?: boolean; days?: string }): void {
       writeMarkdown(join(archiveDir, `${month}.md`), combined);
 
       for (const f of monthFiles) {
-        renameSync(join(memDir, f), join(archiveDir, `daily-${f}`));
+        try {
+          renameSync(join(memDir, f), join(archiveDir, `daily-${f}`));
+        } catch (err: any) {
+          console.log(`Warning: could not rename ${f}: ${err.message}`);
+        }
       }
       console.log(`Archived ${monthFiles.length} files for ${month}`);
     }

@@ -94,4 +94,20 @@ describe("initCommand", () => {
     captureOutput(() => initCommand({ hooks: true }));
     expect(existsSync(join(tmp, ".claude-plugin"))).toBe(true);
   });
+
+  test("malformed CLAUDE.md with only start marker produces valid output", () => {
+    const { writeFileSync } = require("node:fs");
+    writeFileSync(
+      join(tmp, "CLAUDE.md"),
+      "# Project\n\n" + CLAUDE_MD_MARKER_START + "\nstale content without end marker",
+      "utf-8",
+    );
+    captureOutput(() => initCommand({}));
+    const content = readFileSync(join(tmp, "CLAUDE.md"), "utf-8");
+    const startCount = content.split(CLAUDE_MD_MARKER_START).length - 1;
+    const endCount = content.split(CLAUDE_MD_MARKER_END).length - 1;
+    expect(startCount).toBe(1);
+    expect(endCount).toBe(1);
+    expect(content).toContain("# Project");
+  });
 });

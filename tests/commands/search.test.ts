@@ -74,4 +74,21 @@ describe("searchCommand", () => {
     const { stdout: r2 } = captureOutput(() => searchCommand("unique_beta", {}));
     expect(r2.join(" ")).toContain("unique_beta");
   });
+
+  test("empty string query does not crash", () => {
+    const { stdout } = captureOutput(() => searchCommand("", {}));
+    const output = stdout.join(" ");
+    expect(output).toMatch(/No results\.|Invalid query/);
+  });
+
+  test("unclosed FTS5 quote prints Invalid query", () => {
+    const { stdout } = captureOutput(() => searchCommand('"hello', {}));
+    expect(stdout.join(" ")).toContain("Invalid query");
+  });
+
+  test("lone asterisk query does not crash", () => {
+    const { stdout } = captureOutput(() => searchCommand("*", {}));
+    const output = stdout.join(" ");
+    expect(output).toMatch(/No results\.|Invalid query/);
+  });
 });

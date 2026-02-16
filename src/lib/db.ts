@@ -48,7 +48,7 @@ export function upsertDocument(
     .prepare("SELECT mtime_ms FROM file_meta WHERE filepath = ?")
     .get(filepath) as { mtime_ms: number } | undefined;
 
-  if (existing && existing.mtime_ms >= mtimeMs) {
+  if (existing && existing.mtime_ms > mtimeMs) {
     return; // already up to date
   }
 

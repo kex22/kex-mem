@@ -92,11 +92,11 @@ describe("db", () => {
       expect(meta!.size_bytes).toBe(50); // unchanged
     });
 
-    test("skips update when mtime is equal", () => {
+    test("updates when mtime is equal", () => {
       upsertDocument(db, "test.md", "Title", "Body v1", 1000, 50);
       upsertDocument(db, "test.md", "Title v2", "Body v2", 1000, 60);
       const meta = getFileMeta(db, "test.md");
-      expect(meta!.size_bytes).toBe(50); // unchanged
+      expect(meta!.size_bytes).toBe(60); // updated because >= changed to >
     });
 
     test("FTS content is updated on newer mtime", () => {

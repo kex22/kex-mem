@@ -52,6 +52,16 @@ export function formatDate(date: Date = new Date()): string {
 }
 
 export function parseDate(str: string): Date {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+    throw new Error(`Invalid date format: "${str}" (expected YYYY-MM-DD)`);
+  }
   const [y, m, d] = str.split("-").map(Number);
-  return new Date(y, m - 1, d);
+  if (m < 1 || m > 12 || d < 1 || d > 31) {
+    throw new Error(`Invalid date: "${str}"`);
+  }
+  const date = new Date(y, m - 1, d);
+  if (isNaN(date.getTime()) || date.getMonth() !== m - 1 || date.getDate() !== d) {
+    throw new Error(`Invalid date: "${str}"`);
+  }
+  return date;
 }

@@ -33,13 +33,24 @@ export function initCommand(opts: { hooks?: boolean }): void {
   }
 
   if (claudeContent.includes(CLAUDE_MD_MARKER_START)) {
-    // Replace existing injection
     const startIdx = claudeContent.indexOf(CLAUDE_MD_MARKER_START);
-    const endIdx = claudeContent.indexOf(CLAUDE_MD_MARKER_END) + CLAUDE_MD_MARKER_END.length;
-    claudeContent = claudeContent.slice(0, startIdx) + CLAUDE_MD_INJECTION + claudeContent.slice(endIdx);
-  } else {
-    // Append
-    const separator = claudeContent && !claudeContent.endsWith("\n") ? "\n\n" : claudeContent ? "\n" : "";
+    const endIdx = claudeContent.indexOf(CLAUDE_MD_MARKER_END);
+    if (endIdx !== -1) {
+      claudeContent = claudeContent.slice(0, startIdx) + CLAUDE_MD_INJECTION + claudeContent.slice(endIdx + CLAUDE_MD_MARKER_END.length);
+    } else {
+      claudeContent = claudeContent.slice(0, startIdx);
+    }
+  }
+
+  if (!claudeContent.includes(CLAUDE_MD_MARKER_START)) {
+    let separator: string;
+    if (!claudeContent || claudeContent.endsWith("\n\n")) {
+      separator = "";
+    } else if (claudeContent.endsWith("\n")) {
+      separator = "\n";
+    } else {
+      separator = "\n\n";
+    }
     claudeContent = claudeContent + separator + CLAUDE_MD_INJECTION + "\n";
   }
   writeFileSync(claudePath, claudeContent, "utf-8");
