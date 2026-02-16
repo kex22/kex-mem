@@ -1,0 +1,30 @@
+{
+  "name": "longmem",
+  "version": "0.1.0",
+  "description": "Local long-term memory CLI tool + Claude Code plugin",
+  "type": "module",
+  "bin": {
+    "longmem": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "bun run tsup",
+    "dev": "bun run tsup --watch",
+    "test": "bun test"
+  },
+  "files": [
+    "dist",
+    ".claude-plugin",
+    "commands",
+    "hooks"
+  ],
+  "keywords": ["memory", "cli", "claude", "ai", "sqlite", "fts5"],
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.2.4",
+    "tsup": "^8.4.0",
+    "typescript": "^5.7.3"
+  }
+}
