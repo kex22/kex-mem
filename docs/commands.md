@@ -14,9 +14,9 @@ kex-mem init [--hooks]
 3. 创建 `memory/MEMORY.md`（初始模板）
 4. 创建 `memory/USER.md`（用户偏好模板，不覆盖已有）
 5. 创建 SQLite 数据库 `memory/.kex-mem.db`，建立 FTS5 表
-5. 检测 sqlite-vec 可用性，输出提示
-6. 在 CLAUDE.md 中注入 kex-mem 使用指令（`<!-- kex-mem:start/end -->` 标记）
-7. `--hooks`：写入 `.claude-plugin/plugin.json` 和 `hooks/post-tool.sh`（chmod +x）
+6. 检测 sqlite-vec 可用性，输出提示
+7. 在 CLAUDE.md 中注入 kex-mem 使用指令（`<!-- kex-mem:start/end -->` 标记）
+8. `--hooks`：写入 `.claude-plugin/plugin.json` 和 `hooks/post-tool.sh`（chmod +x）
 
 输出：
 ```

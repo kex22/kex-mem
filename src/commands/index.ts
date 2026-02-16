@@ -60,6 +60,8 @@ export async function indexCommand(filepath?: string, opts: { full?: boolean } =
 
   // Full rebuild mode
   if (opts.full) {
+    handle.db.run("DELETE FROM memory_fts");
+    handle.db.run("DELETE FROM file_meta");
     if (useVec) clearVecEntries(handle.db);
 
     const files = readdirSync(memDir).filter((f) => f.endsWith(".md"));
