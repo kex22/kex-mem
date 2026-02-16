@@ -8,7 +8,7 @@ Local long-term memory CLI tool + Claude Code plugin, based on a three-layer mem
 - Bun (runtime, built-in SQLite with FTS5)
 - Commander.js (CLI framework)
 - tsup (build)
-- Published via npm (`npm install -g kex-mem`)
+- Published via npm (`npm install -g @kex22/kex-mem`)
 
 ## Coding Conventions
 
