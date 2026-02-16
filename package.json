@@ -1,10 +1,10 @@
 {
-  "name": "kex-mem",
-  "version": "0.1.0",
+  "name": "@kex22/kex-mem",
+  "version": "0.1.1",
   "description": "Local long-term memory CLI tool + Claude Code plugin",
   "type": "module",
   "bin": {
-    "kex-mem": "./dist/cli.js"
+    "kex-mem": "dist/cli.js"
   },
   "scripts": {
     "build": "bun run tsup",
@@ -17,7 +17,14 @@
     "commands",
     "hooks"
   ],
-  "keywords": ["memory", "cli", "claude", "ai", "sqlite", "fts5"],
+  "keywords": [
+    "memory",
+    "cli",
+    "claude",
+    "ai",
+    "sqlite",
+    "fts5"
+  ],
   "license": "MIT",
   "dependencies": {
     "commander": "^13.1.0"
