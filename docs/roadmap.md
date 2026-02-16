@@ -49,6 +49,19 @@ FTS5 全文搜索，跑通三层记忆的基本流程。
 - memory/USER.md 支持（用户偏好），`kex-mem recall --user`
 - `kex-mem compact --smart`：输出结构化 prompt 供 LLM 提炼旧日志到 MEMORY.md（不调用 API）
 
+## v0.4 — 按需检索 + TODO 追踪 ✓
+
+更精准地取数据，TODO 生命周期管理。
+
+新增：
+- 日志条目解析器 `parser.ts`：纯函数，解析日志 markdown 为结构化条目
+- `kex-mem recall --tag <tag>`：按 tag 过滤日志条目（decision, bug, convention, todo）
+- `kex-mem recall --limit <n>`：截断输出到 N 行
+- `kex-mem search --tag <tag>`：搜索结果按 tag 后过滤
+- `kex-mem todo`：列出未完成 TODO，支持 `--all`（含已完成）和 `--resolve`（标记完成）
+- `kex-mem brief`：精简上下文输出（DURABLE + RECENT + TODO），支持 `--days` 和 `--lines`
+- Hook 模板扩展：`session-start.sh`（brief）、`session-end.sh`（todo 提醒）
+
 ## 未来考虑
 
 - Zvec 替换 sqlite-vec（待生态成熟）

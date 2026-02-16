@@ -153,4 +153,31 @@ describe("initCommand", () => {
     const content = readFileSync(join(tmp, "CLAUDE.md"), "utf-8");
     expect(content).toContain("recall --user");
   });
+
+  test("--hooks creates session-start.sh with executable permission", () => {
+    captureOutput(() => initCommand({ hooks: true }));
+    const hookPath = join(tmp, "hooks", "session-start.sh");
+    expect(existsSync(hookPath)).toBe(true);
+    const content = readFileSync(hookPath, "utf-8");
+    expect(content).toContain("kex-mem brief");
+    const stat = statSync(hookPath);
+    expect(stat.mode & 0o111).toBeGreaterThan(0);
+  });
+
+  test("--hooks creates session-end.sh with executable permission", () => {
+    captureOutput(() => initCommand({ hooks: true }));
+    const hookPath = join(tmp, "hooks", "session-end.sh");
+    expect(existsSync(hookPath)).toBe(true);
+    const content = readFileSync(hookPath, "utf-8");
+    expect(content).toContain("kex-mem todo");
+    const stat = statSync(hookPath);
+    expect(stat.mode & 0o111).toBeGreaterThan(0);
+  });
+
+  test("CLAUDE.md injection includes todo and brief commands", () => {
+    captureOutput(() => initCommand({}));
+    const content = readFileSync(join(tmp, "CLAUDE.md"), "utf-8");
+    expect(content).toContain("kex-mem todo");
+    expect(content).toContain("kex-mem brief");
+  });
 });

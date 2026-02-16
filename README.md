@@ -35,10 +35,18 @@ kex-mem recall            # 今天 + 昨天
 kex-mem recall --week     # 最近 7 天
 kex-mem recall --durable  # 长期记忆
 kex-mem recall --user     # 用户偏好
+kex-mem recall --tag decision  # 按 tag 过滤
 
 # 全文搜索
 kex-mem search "Bun"
 kex-mem search "路径" --limit 20
+
+# TODO 管理
+kex-mem todo              # 列出未完成 TODO
+kex-mem todo --resolve "substring"  # 标记完成
+
+# 精简上下文（会话启动用）
+kex-mem brief             # DURABLE + RECENT + TODO
 
 # 索引
 kex-mem index             # 增量索引（默认）
@@ -74,11 +82,12 @@ kex-mem compact --smart   # 输出结构化 prompt 供 LLM 提炼
 ```
 src/
   cli.ts                 # Commander 入口
-  commands/              # init, log, search, recall, compact, index, config
+  commands/              # init, log, search, recall, compact, index, config, todo, brief
   lib/
     paths.ts             # 路径解析
     db.ts                # SQLite FTS5 + sqlite-vec
     markdown.ts          # Markdown 读写
+    parser.ts            # 日志条目解析器
     config.ts            # 模板常量
     config-store.ts      # 向量搜索配置
     embedder.ts          # Embedding 接口
@@ -98,6 +107,7 @@ bun test
 - **v0.1** — FTS5 全文搜索，6 个核心命令 ✅
 - **v0.2** — sqlite-vec 混合搜索 + `kex-mem config` ✅
 - **v0.3** — 增量索引 + PostToolUse hook + USER.md + `compact --smart` ✅
+- **v0.4** — 按需检索（tag/limit）+ TODO 追踪 + `brief` 上下文摘要 ✅
 
 ## License
 

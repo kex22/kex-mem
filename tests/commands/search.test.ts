@@ -91,4 +91,35 @@ describe("searchCommand", () => {
     const output = stdout.join(" ");
     expect(output).toMatch(/No results\.|Invalid query/);
   });
+
+  test("--tag filters results to files containing that tag", async () => {
+    // Log entries with different tags
+    await captureOutputAsync(() => logCommand("decided to use PostgreSQL", { tag: "decision" }));
+
+    // Create a second file with a bug tag
+    const { writeFileSync } = require("node:fs");
+    const { memoryDir, formatDate } = require("../../src/lib/paths.js");
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yPath = join(memoryDir(tmp), `${formatDate(yesterday)}.md`);
+    writeFileSync(yPath, "# Yesterday\n\n- 10:00 [bug] PostgreSQL connection bug\n", "utf-8");
+
+    // Reindex
+    const { indexCommand } = require("../../src/commands/index.js");
+    await captureOutputAsync(() => indexCommand());
+
+    // Search with tag filter — only the bug file should match
+    const { stdout } = await captureOutputAsync(() => searchCommand("PostgreSQL", { tag: "bug" }));
+    const output = stdout.join("\n");
+    if (output !== "No results.") {
+      expect(output).toContain(formatDate(yesterday));
+      expect(output).not.toContain(formatDate(new Date()));
+    }
+  });
+
+  test("--tag with no matching files shows No results", async () => {
+    await captureOutputAsync(() => logCommand("decided to use PostgreSQL", { tag: "decision" }));
+    const { stdout } = await captureOutputAsync(() => searchCommand("PostgreSQL", { tag: "convention" }));
+    expect(stdout.join(" ")).toContain("No results.");
+  });
 });

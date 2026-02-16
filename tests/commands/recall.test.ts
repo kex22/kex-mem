@@ -125,4 +125,92 @@ describe("recallCommand", () => {
     const { stdout } = captureOutput(() => recallCommand(undefined, { user: true }));
     expect(stdout.join("\n")).toContain("Prefer functional style");
   });
+
+  test("--tag filters entries by tag", () => {
+    const today = formatDate(new Date());
+    const logPath = join(memoryDir(tmp), `${today}.md`);
+    writeFileSync(logPath, [
+      `# ${today}`,
+      "",
+      "- 14:30 [decision] Chose Bun as runtime",
+      "- 15:00 [bug] Fixed null pointer",
+      "- 16:00 [decision] Use FTS5 over Elasticsearch",
+    ].join("\n") + "\n", "utf-8");
+
+    const { stdout } = captureOutput(() => recallCommand(undefined, { tag: "decision" }));
+    const output = stdout.join("\n");
+    expect(output).toContain("Chose Bun");
+    expect(output).toContain("Use FTS5");
+    expect(output).not.toContain("null pointer");
+  });
+
+  test("--tag with --week filters across days", () => {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    writeFileSync(
+      join(memoryDir(tmp), `${formatDate(today)}.md`),
+      `# ${formatDate(today)}\n\n- 14:30 [decision] Today decision\n- 15:00 [bug] Today bug\n`,
+      "utf-8",
+    );
+    writeFileSync(
+      join(memoryDir(tmp), `${formatDate(yesterday)}.md`),
+      `# ${formatDate(yesterday)}\n\n- 10:00 [decision] Yesterday decision\n`,
+      "utf-8",
+    );
+
+    const { stdout } = captureOutput(() => recallCommand(undefined, { week: true, tag: "decision" }));
+    const output = stdout.join("\n");
+    expect(output).toContain("Today decision");
+    expect(output).toContain("Yesterday decision");
+    expect(output).not.toContain("Today bug");
+  });
+
+  test("--tag with no matches shows message", () => {
+    const today = formatDate(new Date());
+    writeFileSync(
+      join(memoryDir(tmp), `${today}.md`),
+      `# ${today}\n\n- 14:30 [bug] Some bug\n`,
+      "utf-8",
+    );
+
+    const { stdout } = captureOutput(() => recallCommand(undefined, { tag: "convention" }));
+    expect(stdout.join(" ")).toContain("No entries with tag: convention");
+  });
+
+  test("--durable ignores --tag", () => {
+    const { stdout } = captureOutput(() => recallCommand(undefined, { durable: true, tag: "decision" }));
+    const output = stdout.join("\n");
+    expect(output).toContain("Durable Memory");
+  });
+
+  test("--limit truncates output", () => {
+    const today = formatDate(new Date());
+    const lines = [`# ${today}`, ""];
+    for (let i = 0; i < 20; i++) {
+      lines.push(`- 10:${String(i).padStart(2, "0")} Entry number ${i}`);
+    }
+    writeFileSync(join(memoryDir(tmp), `${today}.md`), lines.join("\n") + "\n", "utf-8");
+
+    const { stdout } = captureOutput(() => recallCommand(undefined, { limit: "5" }));
+    const output = stdout.join("\n");
+    expect(output).toContain("Entry number 0");
+    expect(output).toContain("... (");
+    expect(output).toContain("more lines)");
+  });
+
+  test("--tag on specific date filters entries", () => {
+    const target = "2025-06-15";
+    writeFileSync(
+      join(memoryDir(tmp), `${target}.md`),
+      `# ${target}\n\n- 09:00 [todo] Write tests\n- 10:00 [bug] Fix crash\n`,
+      "utf-8",
+    );
+
+    const { stdout } = captureOutput(() => recallCommand(target, { tag: "todo" }));
+    const output = stdout.join("\n");
+    expect(output).toContain("Write tests");
+    expect(output).not.toContain("Fix crash");
+  });
 });

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from "node:fs";
 import { findProjectRoot, memoryDir, dbPath, durableMemoryPath, userMemoryPath, claudeMdPath } from "../lib/paths.js";
 import { openDb } from "../lib/db.js";
-import { CLAUDE_MD_INJECTION, CLAUDE_MD_MARKER_START, CLAUDE_MD_MARKER_END, MEMORY_MD_TEMPLATE, USER_MD_TEMPLATE, PLUGIN_JSON_TEMPLATE, POST_TOOL_HOOK_TEMPLATE } from "../lib/config.js";
+import { CLAUDE_MD_INJECTION, CLAUDE_MD_MARKER_START, CLAUDE_MD_MARKER_END, MEMORY_MD_TEMPLATE, USER_MD_TEMPLATE, PLUGIN_JSON_TEMPLATE, POST_TOOL_HOOK_TEMPLATE, SESSION_START_HOOK, SESSION_END_HOOK } from "../lib/config.js";
 import { loadConfig, saveConfig } from "../lib/config-store.js";
 
 export function initCommand(opts: { hooks?: boolean }): void {
@@ -90,6 +90,16 @@ export function initCommand(opts: { hooks?: boolean }): void {
     writeFileSync(hookPath, POST_TOOL_HOOK_TEMPLATE, "utf-8");
     chmodSync(hookPath, 0o755);
     console.log(`Created ${hookPath}`);
+
+    const sessionStartPath = `${hooksDir}/session-start.sh`;
+    writeFileSync(sessionStartPath, SESSION_START_HOOK, "utf-8");
+    chmodSync(sessionStartPath, 0o755);
+    console.log(`Created ${sessionStartPath}`);
+
+    const sessionEndPath = `${hooksDir}/session-end.sh`;
+    writeFileSync(sessionEndPath, SESSION_END_HOOK, "utf-8");
+    chmodSync(sessionEndPath, 0o755);
+    console.log(`Created ${sessionEndPath}`);
   }
 
   console.log("kex-mem initialized.");

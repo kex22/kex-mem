@@ -1,13 +1,18 @@
-import { findProjectRoot, dbPath } from "../lib/paths.js";
+import { join } from "node:path";
+import { findProjectRoot, dbPath, memoryDir } from "../lib/paths.js";
 import { openDb, searchFts, hybridSearch } from "../lib/db.js";
 import { loadConfig } from "../lib/config-store.js";
 import { createEmbedder } from "../lib/embedder.js";
+import { readMarkdown } from "../lib/markdown.js";
+import { parseLogEntries } from "../lib/parser.js";
 
-export async function searchCommand(query: string, opts: { limit?: string }): Promise<void> {
+export async function searchCommand(query: string, opts: { limit?: string; tag?: string }): Promise<void> {
   const root = findProjectRoot();
   const limit = parseInt(opts.limit || "10", 10);
   const config = loadConfig(root);
   const handle = openDb(dbPath(root), { vecDimension: config.vector.dimension });
+
+  let results: { filepath: string; snippet: string }[];
 
   // If vector enabled, use hybrid search
   if (handle.vecEnabled && config.vector.enabled) {
@@ -19,32 +24,35 @@ export async function searchCommand(query: string, opts: { limit?: string }): Pr
       console.error(`Embedding failed, falling back to FTS: ${err.message}`);
     }
 
-    const { results, ftsError } = hybridSearch(handle, query, queryEmbedding, limit);
+    const { results: hybridResults, ftsError } = hybridSearch(handle, query, queryEmbedding, limit);
     handle.db.close();
 
     if (ftsError) {
       console.error(`FTS query error: ${ftsError}`);
     }
-    if (results.length === 0) {
-      console.log("No results.");
+    results = hybridResults;
+  } else {
+    // FTS-only fallback
+    try {
+      results = searchFts(handle.db, query, limit);
+    } catch (err: any) {
+      console.log(`Invalid query: ${err.message}`);
+      handle.db.close();
       return;
     }
-    for (const r of results) {
-      console.log(`[${r.filepath}] ${r.snippet}`);
-    }
-    return;
+    handle.db.close();
   }
 
-  // FTS-only fallback
-  let results;
-  try {
-    results = searchFts(handle.db, query, limit);
-  } catch (err: any) {
-    console.log(`Invalid query: ${err.message}`);
-    handle.db.close();
-    return;
+  // Post-filter by tag if requested
+  if (opts.tag && results.length > 0) {
+    const memDir = memoryDir(root);
+    results = results.filter((r) => {
+      const content = readMarkdown(join(memDir, r.filepath));
+      if (!content) return false;
+      const entries = parseLogEntries(content);
+      return entries.some((e) => e.tag === opts.tag);
+    });
   }
-  handle.db.close();
 
   if (results.length === 0) {
     console.log("No results.");

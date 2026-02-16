@@ -8,14 +8,18 @@ You have access to \`kex-mem\`, a local memory tool. Use it to persist and recal
 
 ### Commands
 
+- \`kex-mem brief\` — compact context summary (durable + recent + TODOs)
 - \`kex-mem recall\` — show recent logs (today + yesterday)
 - \`kex-mem recall --durable\` — show durable memory (MEMORY.md)
 - \`kex-mem recall --user\` — show user preferences (USER.md)
 - \`kex-mem recall --week\` — show past 7 days
+- \`kex-mem recall --tag decision\` — filter by tag
 - \`kex-mem recall 2025-01-15\` — show specific date
 - \`kex-mem log "message" --tag decision\` — record a memory (tags: decision, bug, convention, todo)
 - \`kex-mem search "query"\` — hybrid search (semantic + keyword) across all memories
 - \`kex-mem search "query" --limit 20\` — search with custom limit
+- \`kex-mem todo\` — list open TODOs
+- \`kex-mem todo --resolve "substring"\` — mark a TODO as done
 - \`kex-mem config\` — view current configuration
 - \`kex-mem config set embedding local|openai\` — switch embedding provider
 
@@ -28,7 +32,7 @@ You have access to \`kex-mem\`, a local memory tool. Use it to persist and recal
 
 ### Workflow
 
-- At session start: run \`kex-mem recall\` to load recent context
+- At session start: run \`kex-mem brief\` for quick context
 - During work: \`kex-mem log\` important decisions and findings
 - Before session end: record any unresolved items or key decisions
 ${CLAUDE_MD_MARKER_END}`;
@@ -58,7 +62,7 @@ export const USER_MD_TEMPLATE = `# User Preferences
 export const PLUGIN_JSON_TEMPLATE = `{
   "name": "kex-mem",
   "description": "Local long-term memory for Claude Code",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "skills": ["commands/kex-mem.md"],
   "hooks": {
     "PostToolUse": [{
@@ -82,4 +86,18 @@ case "$FILE_PATH" in
     kex-mem index "$REL_PATH" 2>/dev/null
     ;;
 esac
+`;
+
+export const SESSION_START_HOOK = `#!/usr/bin/env bash
+# Session start: output compact context summary
+kex-mem brief 2>/dev/null
+`;
+
+export const SESSION_END_HOOK = `#!/usr/bin/env bash
+# Session end: remind about open TODOs
+TODOS=$(kex-mem todo 2>/dev/null)
+if [ -n "$TODOS" ]; then
+  echo "Open TODOs:"
+  echo "$TODOS"
+fi
 `;

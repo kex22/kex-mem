@@ -16,7 +16,7 @@ kex-mem init [--hooks]
 5. 创建 SQLite 数据库 `memory/.kex-mem.db`，建立 FTS5 表
 6. 检测 sqlite-vec 可用性，输出提示
 7. 在 CLAUDE.md 中注入 kex-mem 使用指令（`<!-- kex-mem:start/end -->` 标记）
-8. `--hooks`：写入 `.claude-plugin/plugin.json` 和 `hooks/post-tool.sh`（chmod +x）
+8. `--hooks`：写入 `.claude-plugin/plugin.json`、`hooks/post-tool.sh`、`hooks/session-start.sh`、`hooks/session-end.sh`（chmod +x）
 
 输出：
 ```
@@ -59,6 +59,7 @@ Logged to 2026-02-15
 ```bash
 kex-mem search "关键词"
 kex-mem search "database migration" --limit 5
+kex-mem search "bug" --tag bug
 ```
 
 行为：
@@ -66,6 +67,7 @@ kex-mem search "database migration" --limit 5
 2. 向量搜索未启用时：FTS5 MATCH 查询，BM25 排序
 3. 返回 top N 结果（默认 10）
 4. 用 snippet() 提取匹配上下文
+5. `--tag`：后过滤，只保留含指定 tag 的文件结果
 
 输出（token 友好）：
 ```
@@ -93,6 +95,8 @@ kex-mem recall 2026-02-10   # 指定日期
 kex-mem recall --week        # 最近 7 天（摘要视图）
 kex-mem recall --durable     # 显示 MEMORY.md
 kex-mem recall --user        # 显示 USER.md（用户偏好）
+kex-mem recall --tag decision  # 按 tag 过滤
+kex-mem recall --week --limit 20  # 截断输出
 ```
 
 行为：
@@ -101,6 +105,8 @@ kex-mem recall --user        # 显示 USER.md（用户偏好）
 - `--week`：最近 7 天，每天完整内容，`---` 分隔
 - `--durable`：输出 memory/MEMORY.md 内容
 - `--user`：输出 memory/USER.md 内容
+- `--tag <tag>`：解析日志条目，只输出匹配 tag 的条目（`--durable`/`--user` 下忽略）
+- `--limit <n>`：截断输出到 N 行，被截断时追加 `... (N more lines)`
 
 无日志时：
 ```
@@ -188,6 +194,72 @@ Embedding provider: local (dimension: 384)
 ```
 Embedding provider: openai (dimension: 1536)
 Dimension changed. Run `kex-mem index` to rebuild vector index.
+```
+
+## kex-mem todo
+
+管理 TODO 待办事项。
+
+```bash
+kex-mem todo                        # 列出未完成 TODO
+kex-mem todo --all                  # 列出所有 TODO（含已完成）
+kex-mem todo --resolve "substring"  # 标记匹配的 TODO 为完成
+```
+
+行为：
+- 扫描 `memory/` 下所有 `YYYY-MM-DD.md`，提取 `[todo]` 标签条目
+- 默认只显示未完成的（不含 `[done]` 标记）
+- `--all`：包含已完成的，已完成条目带 `[done]` 标记
+- `--resolve`：找到最近一条消息包含该子串的未完成 TODO，在源文件行末追加 ` [done]`
+- 按日期倒序输出
+
+输出格式：
+```
+2026-02-15 14:30  Need to add unit tests
+2026-02-14 10:00  Review PR #42
+```
+
+标记完成时：
+```
+Resolved: Need to add unit tests
+```
+
+无待办时：
+```
+No open TODOs.
+```
+
+## kex-mem brief
+
+精简上下文输出，用于会话启动时快速恢复上下文。
+
+```bash
+kex-mem brief                # 默认：MEMORY.md 前 20 行 + 近 3 天日志 + 未完成 TODO
+kex-mem brief --days 1       # 只看最近 1 天
+kex-mem brief --lines 5      # MEMORY.md 最多 5 行
+```
+
+行为：
+1. 读 MEMORY.md 前 N 行（默认 20，`--lines` 控制）
+2. 读最近 N 天日志（默认 3，`--days` 控制），提取所有条目
+3. 扫描所有日志提取未完成 TODO
+4. 空 section 不输出
+
+输出格式：
+```
+=== DURABLE ===
+# Project Memory
+## Decisions
+- Use PostgreSQL with Drizzle ORM
+... (15 more lines in MEMORY.md)
+
+=== RECENT (3d) ===
+# 2026-02-15
+- 14:30 [decision] Chose Bun as runtime
+
+=== TODO (2 open) ===
+2026-02-14 11:00  Need to add unit tests
+2026-02-10 09:30  Review error handling strategy
 ```
 
 ## 设计原则

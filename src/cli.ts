@@ -5,7 +5,7 @@ const program = new Command();
 program
   .name("kex-mem")
   .description("Local long-term memory for AI coding assistants")
-  .version("0.3.0");
+  .version("0.4.0");
 
 program
   .command("init")
@@ -31,6 +31,7 @@ program
   .description("Full-text search across all memories")
   .argument("<query>", "Search query")
   .option("-l, --limit <n>", "Max results", "10")
+  .option("--tag <tag>", "Filter results by tag")
   .action(async (query, opts) => {
     const { searchCommand } = await import("./commands/search.js");
     await searchCommand(query, opts);
@@ -43,6 +44,8 @@ program
   .option("-d, --durable", "Show durable memory (MEMORY.md)")
   .option("-u, --user", "Show user preferences (USER.md)")
   .option("-w, --week", "Show past 7 days")
+  .option("--tag <tag>", "Filter by tag: decision, bug, convention, todo")
+  .option("-l, --limit <n>", "Max output lines")
   .action(async (date, opts) => {
     const { recallCommand } = await import("./commands/recall.js");
     recallCommand(date, opts);
@@ -76,6 +79,26 @@ program
   .action(async (args) => {
     const { configCommand } = await import("./commands/config.js");
     configCommand(args);
+  });
+
+program
+  .command("todo")
+  .description("List and manage TODO items")
+  .option("--resolve <text>", "Mark matching TODO as done")
+  .option("-a, --all", "Show all TODOs including completed")
+  .action(async (opts) => {
+    const { todoCommand } = await import("./commands/todo.js");
+    todoCommand(opts);
+  });
+
+program
+  .command("brief")
+  .description("Compact context summary for session start")
+  .option("--days <n>", "Recent log days", "3")
+  .option("--lines <n>", "Max MEMORY.md lines", "20")
+  .action(async (opts) => {
+    const { briefCommand } = await import("./commands/brief.js");
+    briefCommand(opts);
   });
 
 program.parse();

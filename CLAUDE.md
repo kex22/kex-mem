@@ -25,11 +25,12 @@ Local long-term memory CLI tool + Claude Code plugin, based on a three-layer mem
 src/
   cli.ts              # Commander entry point
   commands/            # One file per CLI command
-    init.ts, log.ts, search.ts, recall.ts, compact.ts, index.ts, config.ts
+    init.ts, log.ts, search.ts, recall.ts, compact.ts, index.ts, config.ts, todo.ts, brief.ts
   lib/
     paths.ts           # Path resolution (memory dir, db, MEMORY.md, USER.md, daily logs)
     db.ts              # SQLite FTS5 + sqlite-vec init, upsert, hybrid search
     markdown.ts        # Markdown file read/write helpers
+    parser.ts          # Log entry parser (parseLogEntries, filterByTag)
     config.ts          # Template constants (CLAUDE.md injection, MEMORY.md/USER.md templates, hook templates)
     config-store.ts    # Vector search config (memory/.kex-mem.json)
     embedder.ts        # Embedding interface + Local/OpenAI implementations
@@ -54,6 +55,9 @@ src/
 - Vector search is opt-in via `kex-mem config set embedding local|openai`, auto-degrades to pure FTS5 when sqlite-vec unavailable
 - Incremental indexing (v0.3): mtime-based skip, single-file mode for PostToolUse hooks
 - `compact --smart` outputs structured prompt for LLM-driven compaction (no API calls)
+- Tag filtering (v0.4): `recall --tag`, `search --tag`, log entry parser
+- TODO tracking (v0.4): `kex-mem todo` with `--resolve` for lifecycle management
+- Brief context (v0.4): `kex-mem brief` for compact session-start summaries
 
 ## Reference
 
