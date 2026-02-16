@@ -51,7 +51,7 @@ describe("initCommand", () => {
     const content = readFileSync(join(tmp, "CLAUDE.md"), "utf-8");
     expect(content).toContain(CLAUDE_MD_MARKER_START);
     expect(content).toContain(CLAUDE_MD_MARKER_END);
-    expect(content).toContain("longmem recall");
+    expect(content).toContain("kex-mem recall");
   });
 
   test("appends to existing CLAUDE.md", () => {
@@ -87,7 +87,7 @@ describe("initCommand", () => {
     const { stdout } = captureOutput(() => initCommand({}));
     const output = stdout.join("\n");
     expect(output).toContain("Initialized");
-    expect(output).toContain("longmem initialized.");
+    expect(output).toContain("kex-mem initialized.");
   });
 
   test("--hooks creates .claude-plugin directory", () => {

@@ -1,10 +1,10 @@
 {
-  "name": "longmem",
+  "name": "kex-mem",
   "version": "0.1.0",
   "description": "Local long-term memory CLI tool + Claude Code plugin",
   "type": "module",
   "bin": {
-    "longmem": "./dist/cli.js"
+    "kex-mem": "./dist/cli.js"
   },
   "scripts": {
     "build": "bun run tsup",

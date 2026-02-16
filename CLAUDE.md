@@ -8,7 +8,7 @@ Local long-term memory CLI tool + Claude Code plugin, based on a three-layer mem
 - Bun (runtime, built-in SQLite with FTS5)
 - Commander.js (CLI framework)
 - tsup (build)
-- Published via npm (`npm install -g longmem`)
+- Published via npm (`npm install -g kex-mem`)
 
 ## Coding Conventions
 
@@ -37,9 +37,9 @@ src/
 
 | Layer | Storage | Access |
 |---|---|---|
-| Durable | `memory/MEMORY.md` | `longmem recall --durable` |
-| Ephemeral | `memory/YYYY-MM-DD.md` | `longmem recall` |
-| Deep Search | `memory/.longmem.db` | `longmem search "query"` |
+| Durable | `memory/MEMORY.md` | `kex-mem recall --durable` |
+| Ephemeral | `memory/YYYY-MM-DD.md` | `kex-mem recall` |
+| Deep Search | `memory/.longmem.db` | `kex-mem search "query"` |
 
 ## Key Design Decisions
 

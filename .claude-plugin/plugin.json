@@ -2,7 +2,7 @@
   "name": "longmem",
   "description": "Local long-term memory for Claude Code",
   "version": "0.1.0",
-  "skills": ["commands/longmem.md"],
+  "skills": ["commands/kex-mem.md"],
   "hooks": {
     "PostToolUse": [{
       "matcher": "Write|Edit",

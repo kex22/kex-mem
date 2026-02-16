@@ -27,9 +27,9 @@ describe("config", () => {
     });
 
     test("contains command references", () => {
-      expect(CLAUDE_MD_INJECTION).toContain("longmem recall");
-      expect(CLAUDE_MD_INJECTION).toContain("longmem log");
-      expect(CLAUDE_MD_INJECTION).toContain("longmem search");
+      expect(CLAUDE_MD_INJECTION).toContain("kex-mem recall");
+      expect(CLAUDE_MD_INJECTION).toContain("kex-mem log");
+      expect(CLAUDE_MD_INJECTION).toContain("kex-mem search");
     });
 
     test("contains tag list", () => {

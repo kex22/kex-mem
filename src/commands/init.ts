@@ -65,5 +65,5 @@ export function initCommand(opts: { hooks?: boolean }): void {
     console.log("Hooks: use .claude-plugin/plugin.json for PostToolUse integration");
   }
 
-  console.log("longmem initialized.");
+  console.log("kex-mem initialized.");
 }

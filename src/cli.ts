@@ -3,13 +3,13 @@ import { Command } from "commander";
 const program = new Command();
 
 program
-  .name("longmem")
+  .name("kex-mem")
   .description("Local long-term memory for AI coding assistants")
   .version("0.1.0");
 
 program
   .command("init")
-  .description("Initialize longmem in current project")
+  .description("Initialize kex-mem in current project")
   .option("--hooks", "Install Claude Code hooks")
   .action(async (opts) => {
     const { initCommand } = await import("./commands/init.js");

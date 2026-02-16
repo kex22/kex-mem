@@ -8,7 +8,7 @@ export function recallCommand(date?: string, opts: { durable?: boolean; week?: b
   if (opts.durable) {
     const content = readMarkdown(durableMemoryPath(root));
     if (!content) {
-      console.log("No durable memory found. Run `longmem init` first.");
+      console.log("No durable memory found. Run `kex-mem init` first.");
       return;
     }
     console.log(content);

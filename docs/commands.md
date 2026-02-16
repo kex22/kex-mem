@@ -1,11 +1,11 @@
 # CLI 命令设计
 
-## longmem init
+## kex-mem init
 
 初始化项目记忆系统。
 
 ```bash
-longmem init [--hooks]
+kex-mem init [--hooks]
 ```
 
 行为：
@@ -13,25 +13,25 @@ longmem init [--hooks]
 2. 创建 `memory/` 目录
 3. 创建 `memory/MEMORY.md`（初始模板）
 4. 创建 SQLite 数据库 `memory/.longmem.db`，建立 FTS5 表
-5. 在 CLAUDE.md 中注入 longmem 使用指令（`<!-- longmem:start/end -->` 标记）
+5. 在 CLAUDE.md 中注入 kex-mem 使用指令（`<!-- longmem:start/end -->` 标记）
 6. 更新 .gitignore（排除 .longmem.db 等）
 7. `--hooks`：安装 PostToolUse hook 到 `.claude/settings.local.json`
 
 输出：
 ```
-Initialized longmem in /path/to/project
+Initialized kex-mem in /path/to/project
 ```
 
-## longmem log
+## kex-mem log
 
 追加记录到当天日志。
 
 ```bash
-longmem log "内容"
-longmem log --tag decision "选择 Bun 作为运行时"
-longmem log --tag bug "修复 token 过期问题，根因是..."
-longmem log --tag convention "API 错误统一用 RFC 7807"
-longmem log --tag todo "需要补充单元测试"
+kex-mem log "内容"
+kex-mem log --tag decision "选择 Bun 作为运行时"
+kex-mem log --tag bug "修复 token 过期问题，根因是..."
+kex-mem log --tag convention "API 错误统一用 RFC 7807"
+kex-mem log --tag todo "需要补充单元测试"
 ```
 
 行为：
@@ -45,13 +45,13 @@ longmem log --tag todo "需要补充单元测试"
 Logged to memory/2026-02-15.md
 ```
 
-## longmem search
+## kex-mem search
 
 全文搜索所有记忆。
 
 ```bash
-longmem search "关键词"
-longmem search "database migration" --limit 5
+kex-mem search "关键词"
+kex-mem search "database migration" --limit 5
 ```
 
 行为：
@@ -74,18 +74,18 @@ Found 3 results for "database migration"
 
 无索引时：
 ```
-No index found. Run "longmem index" first.
+No index found. Run "kex-mem index" first.
 ```
 
-## longmem recall
+## kex-mem recall
 
 查看日志内容。
 
 ```bash
-longmem recall              # 今天 + 昨天
-longmem recall 2026-02-10   # 指定日期
-longmem recall --week        # 最近 7 天（摘要视图）
-longmem recall --durable     # 显示 MEMORY.md
+kex-mem recall              # 今天 + 昨天
+kex-mem recall 2026-02-10   # 指定日期
+kex-mem recall --week        # 最近 7 天（摘要视图）
+kex-mem recall --durable     # 显示 MEMORY.md
 ```
 
 行为：
@@ -99,12 +99,12 @@ longmem recall --durable     # 显示 MEMORY.md
 No log for 2026-02-10.
 ```
 
-## longmem index
+## kex-mem index
 
 从 Markdown 文件重建搜索索引。
 
 ```bash
-longmem index
+kex-mem index
 ```
 
 行为：
@@ -118,14 +118,14 @@ longmem index
 Indexed 47 files (3 updated, 44 unchanged)
 ```
 
-## longmem compact
+## kex-mem compact
 
 整理旧日志到持久记忆。
 
 ```bash
-longmem compact              # 输出旧日志内容，供 Claude 整理
-longmem compact --auto       # 自动按月归档
-longmem compact --days 14    # 自定义阈值（默认 7 天）
+kex-mem compact              # 输出旧日志内容，供 Claude 整理
+kex-mem compact --auto       # 自动按月归档
+kex-mem compact --days 14    # 自定义阈值（默认 7 天）
 ```
 
 **默认模式**（输出供 Claude 处理）：

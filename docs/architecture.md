@@ -39,44 +39,44 @@ OpenClaw 不只是三层记忆，而是一套 agent 文件操作系统：
 
 ---
 
-## longmem 架构（基于 OpenClaw 的简化适配）
+## kex-mem 架构（基于 OpenClaw 的简化适配）
 
-我们是 Claude Code 插件，不是独立 agent OS。Claude Code 已经提供了身份层（用户自己的 CLAUDE.md），所以 longmem 只聚焦记忆管理。
+我们是 Claude Code 插件，不是独立 agent OS。Claude Code 已经提供了身份层（用户自己的 CLAUDE.md），所以 kex-mem 只聚焦记忆管理。
 
 ### 映射关系
 
-| OpenClaw | longmem | 说明 |
+| OpenClaw | kex-mem | 说明 |
 |---|---|---|
 | SOUL.md | 不需要 | Claude Code 自身有 system prompt |
 | IDENTITY.md | 不需要 | Claude 身份由 Anthropic 定义 |
 | USER.md | memory/USER.md (可选) | 用户偏好，可手动创建 |
 | MEMORY.md | memory/MEMORY.md | 持久记忆，核心 |
 | daily logs | memory/YYYY-MM-DD.md | 每日日志，核心 |
-| TOOLS.md | CLAUDE.md 中的 longmem 指令 | 告诉 Claude 有哪些命令可用 |
+| TOOLS.md | CLAUDE.md 中的 kex-mem 指令 | 告诉 Claude 有哪些命令可用 |
 | hybrid search | SQLite FTS5 (v0.1) + sqlite-vec (v0.2) | 渐进式引入 |
-| pre-compaction flush | longmem compact | 手动/Claude 触发，非自动 silent turn |
+| pre-compaction flush | kex-mem compact | 手动/Claude 触发，非自动 silent turn |
 
 ### 数据流
 
 ```
 写入:
-  Claude 决策/发现 → longmem log → memory/YYYY-MM-DD.md → FTS5 索引
+  Claude 决策/发现 → kex-mem log → memory/YYYY-MM-DD.md → FTS5 索引
 
 读取:
-  Claude 需要上下文 → longmem recall / search → stdout → Claude context
+  Claude 需要上下文 → kex-mem recall / search → stdout → Claude context
 
 整理:
-  旧日志积累 → longmem compact → Claude 提炼 → 更新 MEMORY.md → 归档旧日志
+  旧日志积累 → kex-mem compact → Claude 提炼 → 更新 MEMORY.md → 归档旧日志
 
 索引:
-  memory/*.md 变更 → longmem index → SQLite FTS5 (+ sqlite-vec v0.2)
+  memory/*.md 变更 → kex-mem index → SQLite FTS5 (+ sqlite-vec v0.2)
 ```
 
 ### 目录结构
 
 ```
 project-root/
-├── CLAUDE.md                      # 含 longmem 使用指令（Claude Code 自动加载）
+├── CLAUDE.md                      # 含 kex-mem 使用指令（Claude Code 自动加载）
 ├── memory/
 │   ├── MEMORY.md                  # 持久记忆（Git tracked）
 │   ├── USER.md                    # 用户偏好（可选，Git tracked）
@@ -95,25 +95,25 @@ project-root/
 
 不依赖 MCP，不依赖常驻进程：
 
-1. **CLAUDE.md** — `longmem init` 注入指令，Claude Code 每次会话自动加载
-2. **Bash tool** — Claude 根据指令自主调用 longmem CLI
+1. **CLAUDE.md** — `kex-mem init` 注入指令，Claude Code 每次会话自动加载
+2. **Bash tool** — Claude 根据指令自主调用 kex-mem CLI
 3. **stdout** — CLI 输出直接进入 Claude 上下文
 
 ```
 会话开始
-  → Claude 读到 CLAUDE.md 中的 longmem 指令
-  → 执行 longmem recall 加载近期上下文
-  → 工作中按需 longmem search / longmem log
-  → 会话结束前 longmem log 记录重要决策
+  → Claude 读到 CLAUDE.md 中的 kex-mem 指令
+  → 执行 kex-mem recall 加载近期上下文
+  → 工作中按需 kex-mem search / kex-mem log
+  → 会话结束前 kex-mem log 记录重要决策
 ```
 
 ### 与 OpenClaw 的关键差异
 
-| 方面 | OpenClaw | longmem |
+| 方面 | OpenClaw | kex-mem |
 |---|---|---|
 | 定位 | 独立 agent OS | Claude Code CLI 插件 |
 | 身份管理 | SOUL.md + IDENTITY.md | 不需要，Claude Code 自带 |
 | 上下文注入 | 自有 agent runner | 利用 Claude Code 原生 CLAUDE.md + Bash |
-| pre-compaction | 自动 silent agentic turn | 手动 longmem compact（Claude 可主动调用） |
+| pre-compaction | 自动 silent agentic turn | 手动 kex-mem compact（Claude 可主动调用） |
 | 搜索 | 内置混合搜索 | CLI 命令，按需调用 |
 | 部署 | 独立服务 | npm install -g，零配置 |

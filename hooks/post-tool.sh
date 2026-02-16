@@ -8,6 +8,6 @@ FILE_PATH="$2"
 # Only act on memory directory files
 case "$FILE_PATH" in
   */memory/*.md)
-    longmem index 2>/dev/null
+    kex-mem index 2>/dev/null
     ;;
 esac

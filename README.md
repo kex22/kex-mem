@@ -16,34 +16,34 @@ Markdown 是数据源，SQLite 只是搜索索引。人类和 AI 都能直接读
 
 ```bash
 # 需要 Bun (内置 SQLite)
-bun install -g longmem
+bun install -g kex-mem
 ```
 
 ## 快速开始
 
 ```bash
 # 在项目根目录初始化
-longmem init
+kex-mem init
 
 # 记录
-longmem log "选择 Bun 作为运行时" --tag decision
-longmem log "修复了路径解析的 bug" --tag bug
+kex-mem log "选择 Bun 作为运行时" --tag decision
+kex-mem log "修复了路径解析的 bug" --tag bug
 
 # 查看近期日志
-longmem recall            # 今天 + 昨天
-longmem recall --week     # 最近 7 天
-longmem recall --durable  # 长期记忆
+kex-mem recall            # 今天 + 昨天
+kex-mem recall --week     # 最近 7 天
+kex-mem recall --durable  # 长期记忆
 
 # 全文搜索
-longmem search "Bun"
-longmem search "路径" --limit 20
+kex-mem search "Bun"
+kex-mem search "路径" --limit 20
 
 # 重建索引
-longmem index
+kex-mem index
 
 # 归档旧日志
-longmem compact           # 预览
-longmem compact --auto    # 按月归档
+kex-mem compact           # 预览
+kex-mem compact --auto    # 按月归档
 ```
 
 ## 标签
@@ -57,10 +57,10 @@ longmem compact --auto    # 按月归档
 
 ## Claude Code 集成
 
-`longmem init` 会自动向项目 `CLAUDE.md` 注入使用说明，Claude Code 加载后即知道如何调用。
+`kex-mem init` 会自动向项目 `CLAUDE.md` 注入使用说明，Claude Code 加载后即知道如何调用。
 
 同时提供 `.claude-plugin/plugin.json`，支持：
-- `/longmem` 斜杠命令
+- `/kex-mem` 斜杠命令
 - `PostToolUse` hook（Write/Edit 后自动重建索引）
 
 ## 项目结构
