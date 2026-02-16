@@ -174,10 +174,66 @@ describe("initCommand", () => {
     expect(stat.mode & 0o111).toBeGreaterThan(0);
   });
 
+  test("--hooks creates pre-compact.sh with executable permission", () => {
+    captureOutput(() => initCommand({ hooks: true }));
+    const hookPath = join(tmp, "hooks", "pre-compact.sh");
+    expect(existsSync(hookPath)).toBe(true);
+    const content = readFileSync(hookPath, "utf-8");
+    expect(content).toContain("kex-mem recall --durable");
+    expect(content).toContain("kex-mem todo");
+    const stat = statSync(hookPath);
+    expect(stat.mode & 0o111).toBeGreaterThan(0);
+  });
+
   test("CLAUDE.md injection includes todo and brief commands", () => {
     captureOutput(() => initCommand({}));
     const content = readFileSync(join(tmp, "CLAUDE.md"), "utf-8");
     expect(content).toContain("kex-mem todo");
     expect(content).toContain("kex-mem brief");
+  });
+
+  test("--hooks creates .claude/settings.json with hooks", () => {
+    captureOutput(() => initCommand({ hooks: true }));
+    const settingsPath = join(tmp, ".claude", "settings.json");
+    expect(existsSync(settingsPath)).toBe(true);
+    const content = JSON.parse(readFileSync(settingsPath, "utf-8"));
+    expect(content.hooks.SessionStart).toHaveLength(1);
+    expect(content.hooks.SessionStart[0].hooks[0].command).toBe("bash hooks/session-start.sh");
+    expect(content.hooks.PreCompact).toHaveLength(1);
+    expect(content.hooks.PreCompact[0].hooks[0].command).toBe("bash hooks/pre-compact.sh");
+  });
+
+  test("--hooks repeated does not duplicate hooks (idempotent)", () => {
+    captureOutput(() => initCommand({ hooks: true }));
+    captureOutput(() => initCommand({ hooks: true }));
+    const settingsPath = join(tmp, ".claude", "settings.json");
+    const content = JSON.parse(readFileSync(settingsPath, "utf-8"));
+    expect(content.hooks.SessionStart).toHaveLength(1);
+    expect(content.hooks.PreCompact).toHaveLength(1);
+  });
+
+  test("--hooks preserves existing settings.json content", () => {
+    const { writeFileSync, mkdirSync } = require("node:fs");
+    mkdirSync(join(tmp, ".claude"), { recursive: true });
+    writeFileSync(
+      join(tmp, ".claude", "settings.json"),
+      JSON.stringify({ permissions: { allow: ["Bash(npm test)"] } }, null, 2),
+      "utf-8",
+    );
+    captureOutput(() => initCommand({ hooks: true }));
+    const content = JSON.parse(readFileSync(join(tmp, ".claude", "settings.json"), "utf-8"));
+    expect(content.permissions).toEqual({ allow: ["Bash(npm test)"] });
+    expect(content.hooks.SessionStart).toHaveLength(1);
+    expect(content.hooks.PreCompact).toHaveLength(1);
+  });
+
+  test("--hooks recovers from malformed settings.json", () => {
+    const { writeFileSync, mkdirSync } = require("node:fs");
+    mkdirSync(join(tmp, ".claude"), { recursive: true });
+    writeFileSync(join(tmp, ".claude", "settings.json"), "not json{{{", "utf-8");
+    captureOutput(() => initCommand({ hooks: true }));
+    const content = JSON.parse(readFileSync(join(tmp, ".claude", "settings.json"), "utf-8"));
+    expect(content.hooks.SessionStart).toHaveLength(1);
+    expect(content.hooks.PreCompact).toHaveLength(1);
   });
 });

@@ -5,7 +5,7 @@ const program = new Command();
 program
   .name("kex-mem")
   .description("Local long-term memory for AI coding assistants")
-  .version("0.4.0");
+  .version("0.4.1");
 
 program
   .command("init")

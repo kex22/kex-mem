@@ -16,7 +16,7 @@ kex-mem init [--hooks]
 5. 创建 SQLite 数据库 `memory/.kex-mem.db`，建立 FTS5 表
 6. 检测 sqlite-vec 可用性，输出提示
 7. 在 CLAUDE.md 中注入 kex-mem 使用指令（`<!-- kex-mem:start/end -->` 标记）
-8. `--hooks`：写入 `.claude-plugin/plugin.json`、`hooks/post-tool.sh`、`hooks/session-start.sh`、`hooks/session-end.sh`（chmod +x）
+8. `--hooks`：写入 `.claude-plugin/plugin.json`、`hooks/post-tool.sh`、`hooks/session-start.sh`、`hooks/session-end.sh`、`hooks/pre-compact.sh`（chmod +x），并生成 `.claude/settings.json`（含 SessionStart + PreCompact hooks，幂等合并已有内容）
 
 输出：
 ```

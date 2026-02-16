@@ -33,6 +33,7 @@ src/
     parser.ts          # Log entry parser (parseLogEntries, filterByTag)
     config.ts          # Template constants (CLAUDE.md injection, MEMORY.md/USER.md templates, hook templates)
     config-store.ts    # Vector search config (memory/.kex-mem.json)
+    settings.ts        # Claude Code .claude/settings.json generation + merge
     embedder.ts        # Embedding interface + Local/OpenAI implementations
 ```
 

@@ -30,6 +30,7 @@ Local long-term memory tool. Use these commands via Bash:
 
 ## Workflow
 
-1. Session start: `kex-mem brief`
+1. Session start: `kex-mem brief` (auto via SessionStart hook)
 2. During work: `kex-mem log "..." --tag <tag>`
-3. Session end: log unresolved items and key decisions
+3. Before compaction: durable memory + TODOs injected (auto via PreCompact hook)
+4. Session end: log unresolved items and key decisions

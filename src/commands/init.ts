@@ -1,8 +1,9 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from "node:fs";
 import { findProjectRoot, memoryDir, dbPath, durableMemoryPath, userMemoryPath, claudeMdPath } from "../lib/paths.js";
 import { openDb } from "../lib/db.js";
-import { CLAUDE_MD_INJECTION, CLAUDE_MD_MARKER_START, CLAUDE_MD_MARKER_END, MEMORY_MD_TEMPLATE, USER_MD_TEMPLATE, PLUGIN_JSON_TEMPLATE, POST_TOOL_HOOK_TEMPLATE, SESSION_START_HOOK, SESSION_END_HOOK } from "../lib/config.js";
+import { CLAUDE_MD_INJECTION, CLAUDE_MD_MARKER_START, CLAUDE_MD_MARKER_END, MEMORY_MD_TEMPLATE, USER_MD_TEMPLATE, PLUGIN_JSON_TEMPLATE, POST_TOOL_HOOK_TEMPLATE, SESSION_START_HOOK, SESSION_END_HOOK, PRE_COMPACT_HOOK } from "../lib/config.js";
 import { loadConfig, saveConfig } from "../lib/config-store.js";
+import { generateHooksSettings, mergeSettings } from "../lib/settings.js";
 
 export function initCommand(opts: { hooks?: boolean }): void {
   const root = findProjectRoot();
@@ -100,6 +101,29 @@ export function initCommand(opts: { hooks?: boolean }): void {
     writeFileSync(sessionEndPath, SESSION_END_HOOK, "utf-8");
     chmodSync(sessionEndPath, 0o755);
     console.log(`Created ${sessionEndPath}`);
+
+    const preCompactPath = `${hooksDir}/pre-compact.sh`;
+    writeFileSync(preCompactPath, PRE_COMPACT_HOOK, "utf-8");
+    chmodSync(preCompactPath, 0o755);
+    console.log(`Created ${preCompactPath}`);
+
+    // Generate .claude/settings.json with SessionStart + PreCompact hooks
+    const claudeDir = `${root}/.claude`;
+    if (!existsSync(claudeDir)) {
+      mkdirSync(claudeDir, { recursive: true });
+    }
+    const settingsPath = `${claudeDir}/settings.json`;
+    let existing: Record<string, any> = {};
+    if (existsSync(settingsPath)) {
+      try {
+        existing = JSON.parse(readFileSync(settingsPath, "utf-8"));
+      } catch {
+        existing = {};
+      }
+    }
+    const merged = mergeSettings(existing, generateHooksSettings());
+    writeFileSync(settingsPath, JSON.stringify(merged, null, 2) + "\n", "utf-8");
+    console.log(`Updated ${settingsPath}`);
   }
 
   console.log("kex-mem initialized.");

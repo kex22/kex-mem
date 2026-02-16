@@ -75,7 +75,9 @@ kex-mem compact --smart   # 输出结构化 prompt 供 LLM 提炼
 - `/kex-mem` 斜杠命令
 - `PostToolUse` hook（Write/Edit 后自动单文件索引）
 
-运行 `kex-mem init --hooks` 自动安装 plugin.json 和 hook 脚本。
+运行 `kex-mem init --hooks` 自动安装 plugin.json 和 hook 脚本，并生成 `.claude/settings.json`：
+- `SessionStart` hook → 自动运行 `kex-mem brief`，注入上下文摘要
+- `PreCompact` hook → 上下文压缩前注入持久记忆（DURABLE + TODO），确保关键信息不丢失
 
 ## 项目结构
 

@@ -1,7 +1,7 @@
 {
   "name": "kex-mem",
   "description": "Local long-term memory for Claude Code",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "skills": ["commands/kex-mem.md"],
   "hooks": {
     "PostToolUse": [{

@@ -62,7 +62,7 @@ export const USER_MD_TEMPLATE = `# User Preferences
 export const PLUGIN_JSON_TEMPLATE = `{
   "name": "kex-mem",
   "description": "Local long-term memory for Claude Code",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "skills": ["commands/kex-mem.md"],
   "hooks": {
     "PostToolUse": [{
@@ -101,3 +101,14 @@ if [ -n "$TODOS" ]; then
   echo "$TODOS"
 fi
 `;
+
+export const PRE_COMPACT_HOOK = `#!/usr/bin/env bash
+# PreCompact: inject essential memory before context compaction
+# Outputs durable memory + open TODOs so they survive compaction
+echo "=== DURABLE MEMORY ==="
+kex-mem recall --durable 2>/dev/null
+echo ""
+echo "=== OPEN TODOs ==="
+kex-mem todo 2>/dev/null
+`;
+
